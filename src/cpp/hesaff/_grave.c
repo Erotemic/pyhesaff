@@ -1,6 +1,6 @@
 
 
-//PYHESAFF void detectKeypointsList(int num_fpaths,
+//HESAFF void detectKeypointsList(int num_fpaths,
 //                                  char** image_fpath_list,
 //                                  float** keypoints_array,
 //                                  uint8** descriptors_array,
@@ -50,7 +50,7 @@
 //typedef void*(*allocer_t)(int, int*);
 
 
-//const PYHESAFF char* cmake_build_type()
+//const HESAFF char* cmake_build_type()
 //{
 //    // References:
 //    // http://stackoverflow.com/questions/14883853/ctypes-return-a-string-from-c-function
@@ -64,7 +64,7 @@
 //    return build_type;
 //}
 
-//PYHESAFF char* free_char(char* malloced_char)
+//HESAFF char* free_char(char* malloced_char)
 //{
 //    // need to free anything malloced here
 //    free(malloced_char);

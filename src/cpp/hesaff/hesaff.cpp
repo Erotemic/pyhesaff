@@ -928,10 +928,10 @@ extern "C" {
 #endif
 
 // Python binds to extern C code
-#define PYHESAFF extern HESAFF_EXPORT
+#define HESAFF extern HESAFF_EXPORT
 
 
-PYHESAFF int detect(AffineHessianDetector* detector)
+HESAFF int detect(AffineHessianDetector* detector)
 {
     printDBG("detector->detect");
     int nKpts = detector->detect();
@@ -944,24 +944,24 @@ PYHESAFF int detect(AffineHessianDetector* detector)
 }
 
 
-PYHESAFF int get_cpp_version()
+HESAFF int get_cpp_version()
 {
     return 3;
 }
 
 
-PYHESAFF int is_debug_mode()
+HESAFF int is_debug_mode()
 {
     return DEBUG_ROTINVAR || DEBUG_HESAFF;
 }
 
 
-PYHESAFF int get_kpts_dim()
+HESAFF int get_kpts_dim()
 {
     return KPTS_DIM;
 }
 
-PYHESAFF int get_desc_dim()
+HESAFF int get_desc_dim()
 {
     return DESC_DIM;
 }
@@ -1087,7 +1087,7 @@ affine_invariance, only_count, use_dense, dense_stride, siftPower
 
 
 // new hessian affine detector (from image pixels)
-PYHESAFF AffineHessianDetector* new_hesaff_image(uint8 *imgin, int rows, int cols, int  channels, __HESAFF_PARAM_SIGNATURE_ARGS__)
+HESAFF AffineHessianDetector* new_hesaff_image(uint8 *imgin, int rows, int cols, int  channels, __HESAFF_PARAM_SIGNATURE_ARGS__)
 {
     // Convert input image to float32
     cv::Mat image(rows, cols, CV_32FC1, Scalar(0));
@@ -1120,7 +1120,7 @@ PYHESAFF AffineHessianDetector* new_hesaff_image(uint8 *imgin, int rows, int col
 }
 
 // new hessian affine detector (from image fpath)
-PYHESAFF AffineHessianDetector* new_hesaff_fpath(char* img_fpath, __HESAFF_PARAM_SIGNATURE_ARGS__)
+HESAFF AffineHessianDetector* new_hesaff_fpath(char* img_fpath, __HESAFF_PARAM_SIGNATURE_ARGS__)
 {
     printDBG("making detector for " << img_fpath);
     printDBG(" * img_fpath = " << img_fpath);
@@ -1137,7 +1137,7 @@ PYHESAFF AffineHessianDetector* new_hesaff_fpath(char* img_fpath, __HESAFF_PARAM
 
 
 // new default hessian affine detector WRAPPER
-PYHESAFF AffineHessianDetector* new_hesaff_imgpath_noparams(char* img_fpath)
+HESAFF AffineHessianDetector* new_hesaff_imgpath_noparams(char* img_fpath)
 {
 
     __HESAFF_DEFINE_PARAMS_FROM_DEFAULTS__
@@ -1146,7 +1146,7 @@ PYHESAFF AffineHessianDetector* new_hesaff_imgpath_noparams(char* img_fpath)
     return detector;
 }
 
-PYHESAFF void free_hesaff(AffineHessianDetector* detector)
+HESAFF void free_hesaff(AffineHessianDetector* detector)
 {
     printDBG("about to free detector=@" << static_cast<void*>(detector))
     //printDBG("about to free &detector=@" << static_cast<void*>(&detector))
@@ -1155,7 +1155,7 @@ PYHESAFF void free_hesaff(AffineHessianDetector* detector)
 }
 
 // extract descriptors from user specified keypoints
-PYHESAFF void extractDesc(AffineHessianDetector* detector,
+HESAFF void extractDesc(AffineHessianDetector* detector,
                           int nKpts, float* kpts, uint8* desc)
 {
     printDBG("detector->extractDesc");
@@ -1165,7 +1165,7 @@ PYHESAFF void extractDesc(AffineHessianDetector* detector,
 
 
 // Extracts patches used to compute descriptors
-PYHESAFF void extractPatches(AffineHessianDetector* detector,
+HESAFF void extractPatches(AffineHessianDetector* detector,
                           int nKpts, float* kpts, float* patch_array)
 {
     printDBG("detector->extractPatches");
@@ -1174,7 +1174,7 @@ PYHESAFF void extractPatches(AffineHessianDetector* detector,
 }
 
 // export current detections to numpy arrays
-PYHESAFF void exportArrays(AffineHessianDetector* detector,
+HESAFF void exportArrays(AffineHessianDetector* detector,
                            int nKpts, float *kpts, uint8 *desc)
 {
     printDBG("detector->exportArrays(" << nKpts << ")");
@@ -1187,7 +1187,7 @@ PYHESAFF void exportArrays(AffineHessianDetector* detector,
 }
 
 // dump current detections to disk
-PYHESAFF void writeFeatures(AffineHessianDetector* detector,
+HESAFF void writeFeatures(AffineHessianDetector* detector,
                             char* img_fpath)
 {
     // Dump keypoints to disk in text format
@@ -1209,7 +1209,7 @@ PYHESAFF void writeFeatures(AffineHessianDetector* detector,
     #endif
 }
 
-PYHESAFF void extractDescFromPatches(int num_patches,
+HESAFF void extractDescFromPatches(int num_patches,
                                      int patch_h,
                                      int patch_w,
                                      uint8* patches_array,
@@ -1253,7 +1253,7 @@ PYHESAFF void extractDescFromPatches(int num_patches,
 }
 
 
-PYHESAFF AffineHessianDetector** detectFeaturesListStep1(int num_fpaths,
+HESAFF AffineHessianDetector** detectFeaturesListStep1(int num_fpaths,
                                                           char** image_fpath_list,
                                                           __HESAFF_PARAM_SIGNATURE_ARGS__)
 {
@@ -1272,7 +1272,7 @@ PYHESAFF AffineHessianDetector** detectFeaturesListStep1(int num_fpaths,
     return detector_array;
 }
 
-PYHESAFF void detectFeaturesListStep2(int num_fpaths, AffineHessianDetector** detector_array, int* length_array)
+HESAFF void detectFeaturesListStep2(int num_fpaths, AffineHessianDetector** detector_array, int* length_array)
 {
     printDBG("detectFeaturesListStep2()");
     // Run Detection
@@ -1286,7 +1286,7 @@ PYHESAFF void detectFeaturesListStep2(int num_fpaths, AffineHessianDetector** de
     }
 }
 
-PYHESAFF void detectFeaturesListStep3(int num_fpaths,
+HESAFF void detectFeaturesListStep3(int num_fpaths,
                                        AffineHessianDetector** detector_array,
                                        int* length_array,
                                        int* offset_array,

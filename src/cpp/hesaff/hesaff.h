@@ -7,16 +7,22 @@
 #endif // ndef sprintf
 #endif // WIN32
 
-#define HESAFF_EXPORT // ????
-#ifndef FOO_DLL  // ???
-#ifdef HESAFF_EXPORTS // EXPORTS??? ... No need on mingw
-#define HESAFF_EXPORT __declspec(dllexport)
-#else
-//#define HESAFF_EXPORT __declspec(dllimport)
+#ifdef HESAFF_EXPORT
+#undef HESAFF_EXPORT
 #endif
+#ifdef WIN32
+/* win32 dll export/import directives */
+ #ifdef HESAFF_EXPORTS
+  #define HESAFF_EXPORT __declspec(dllexport)
+ #elif defined(HESAFF_STATIC)
+  #define HESAFF_EXPORT
+ #else
+  #define HESAFF_EXPORT __declspec(dllimport)
+ #endif
 #else
-#define HESAFF_EXPORT
-#endif // FOO_DLL // ???
+/* unix needs nothing */
+ #define HESAFF_EXPORT
+#endif
 
 // TODO : use either adapt_rotation or rotation_invariance, but not both
 

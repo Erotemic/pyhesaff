@@ -175,7 +175,7 @@ AUTHORS = ', '.join(ORIGINAL_AUTHORS + EXTENDED_AUTHORS + CURRENT_AUTHORS)
 AUTHOR_EMAIL = 'dev@wildme.org'
 URL = 'https://github.com/WildbookOrg/hesaff'
 LICENSE = 'APL 2.0'
-DESCRIPTION = 'Vtool - Image Tools for Wildbook IA'
+DESCRIPTION = 'PyHesaff - Python wrapper for Hessian Affine'
 
 
 KWARGS = OrderedDict(
