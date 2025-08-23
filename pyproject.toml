@@ -1,37 +1,6 @@
 [build-system]
 requires = [ "setuptools>=41.0.1", "wheel", "scikit-build>=0.9.0", "numpy", "ninja", "build"]
 
-[tool.cibuildwheel]
-build = "cp37-* cp38-* cp39-* cp310-* cp311-*"
-build-frontend = "build"
-skip = "pp* cp27-* cp34-* cp35-* cp36-* *-musllinux_*"
-build-verbosity = 1
-# testing on the build container fails because we need the cv2
-# module which needs a new zlib that we cant use to build with
-# disable testing in cibuildwheel for now (we need to add it in as a postprocessing step)
-test-skip = "*"  
-test-requires = [ "-r requirements/tests.txt", "-r requirements/headless.txt"]
-test-command = "python {project}/run_tests.py"
-
-# See: ~/code/vtool_ibeis_ext/dev/build_base_docker2.py
-manylinux-x86_64-image = "quay.io/erotemic/manylinux2014_x86_64_for:opencv"
-manylinux-i686-image = "quay.io/erotemic/manylinux2014_i686_for:opencv"
-#manylinux-x86_64-image = "manylinux2014"
-#manylinux-i686-image = "manylinux2014"
-#manylinux-aarch64-image = "manylinux2014"
-#manylinux-ppc64le-image = "manylinux2014"
-#manylinux-s390x-image = "manylinux2014"
-#manylinux-pypy_x86_64-image = "manylinux2014"
-#manylinux-pypy_i686-image = "manylinux2014"
-#manylinux-pypy_aarch64-image = "manylinux2014"
-#musllinux-x86_64-image = "musllinux_1_1"
-#musllinux-i686-image = "musllinux_1_1"
-#musllinux-aarch64-image = "musllinux_1_1"
-#musllinux-ppc64le-image = "musllinux_1_1"
-#musllinux-s390x-image = "musllinux_1_1"
-
-#    quay.io/Erotemic/manylinux2014_x86_64_for:opencv
-
 [tool.mypy]
 ignore_missing_imports = true
 
@@ -42,6 +11,7 @@ rel_mod_parent_dpath = "."
 #os = [ "linux", "osx", "win",]
 os = [ "linux" ]
 repo_name = "pyhesaff"
+min_python = "3.9"
 author = "Krystian Mikolajczyk, Michal Perdoch, Jon Crall, Avi Weinstock"
 url = "https://github.com/Erotemic/pyhesaff"
 author_email = "erotemic@gmail.com"
@@ -56,8 +26,36 @@ description = "Routines for computation of hessian affine keypoints in images."
 #    'https://github.com/Erotemic/hesaff',
 #]
 
+[tool.cibuildwheel]
+build = "cp39-* cp310-* cp311-* cp312-* cp313-*"
+build-frontend = "build"
+skip = "pp* *-musllinux_*"
+build-verbosity = 1
+# testing on the build container fails because we need the cv2
+# module which needs a new zlib that we cant use to build with
+# disable testing in cibuildwheel for now (we need to add it in as a postprocessing step)
+test-skip = "*"  
+test-requires = [ "-r requirements/tests.txt", "-r requirements/headless.txt"]
+test-command = "python {project}/run_tests.py"
+
+# See: ~/code/vtool_ibeis_ext/dev/build_base_docker2.py
+
+manylinux-x86_64-image = "quay.io/pypa/manylinux_2_28_x86_64"
+
+#manylinux-x86_64-image = "quay.io/erotemic/manylinux2014_x86_64_for:opencv"
+#manylinux-i686-image = "quay.io/erotemic/manylinux2014_i686_for:opencv"
+
+[tool.cibuildwheel.linux]
+
+# Work around issue to support older glib toolchain when installing opencv
+before-build = """
+set -eux
+yum -y install epel-release
+yum -y install opencv-devel
+"""
+
 #[tool.cibuildwheel.linux]
-#before-all = "yum install opencv opencv-devel -y"
+#before-build = "yum install -y opencv-devel"
 
 #[tool.cibuildwheel.windows]
 #before-all = "choco install lz4 -y"
