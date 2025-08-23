@@ -25,3 +25,5 @@ coverage>=5.3.1     ; python_version < '3.10' and python_version >= '3.9'    # P
 coverage>=6.1.1     ; python_version < '3.9' and python_version >= '3.8'    # Python 3.8
 
 requests>=2.25.1
+
+kwimage>=0.11.1
