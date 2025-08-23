@@ -510,7 +510,7 @@ def detect_feats_list(image_paths_list, **kwargs):
         >>> # ENABLE_DOCTEST
         >>> from pyhesaff._pyhesaff import *  # NOQA
         >>> fpath = grab_test_imgpath('astro')
-        >>> image_paths_list = [grab_test_imgpath('carl'), grab_test_imgpath('star'), fpath]
+        >>> image_paths_list = [grab_test_imgpath('carl'), grab_test_imgpath('superstar'), fpath]
         >>> (kpts_list, vecs_list) = detect_feats_list(image_paths_list)
         >>> #print((kpts_list, vecs_list))
         >>> # Assert that the normal version agrees
@@ -916,7 +916,7 @@ def test_rot_invar():
     next_pnum = pt.make_pnum_nextgen(nRows, nCols)
     # Expand the border a bit around star.png
     pad_ = 100
-    img_fpath = grab_test_imgpath('star')
+    img_fpath = grab_test_imgpath('superstar')
     img_fpath2 = vt.pad_image_ondisk(img_fpath, pad_, value=26)
     for theta in theta_list:
         print('-----------------')
