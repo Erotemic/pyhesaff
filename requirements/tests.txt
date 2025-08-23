@@ -1,4 +1,4 @@
-utool >= 2.1.7
+utool >= 2.2.1
 
 xdoctest >= 1.1.5
 
