@@ -1,5 +1,4 @@
 # flake8: noqa
-from __future__ import absolute_import, print_function, division
 __version__ = '2.1.1'
 __author__ = 'Jon Crall'
 __author_email__ = 'erotemic@gmail.com'
@@ -25,11 +24,6 @@ from pyhesaff._pyhesaff import (DESC_DIM, HESAFF_CLIB,
                                 test_rot_invar,
                                 vtool_adapt_rotation,)
 
-#from pyhesaff._pyhesaff import (extract_vecs, detect_feats, detect_feats_list,
-#                                adapt_scale, vtool_adapt_rotation, kpts_dtype, vecs_dtype,
-#                                get_hesaff_default_params, extract_desc_from_patches,
-#                                KPTS_DIM, DESC_DIM, __LIB_FPATH__, HESAFF_CLIB)
-#from pyhesaff._pyhesaff import *  # NOQA
 """
 # ut.util_inspect.get_module_owned_functions(pyhesaff._pyhesaff)
 import pyhesaff

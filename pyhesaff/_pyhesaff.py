@@ -98,8 +98,8 @@ HESAFF_PARAM_TYPES = [type_ for (type_, key, val) in HESAFF_TYPED_PARAMS]
 
 
 def grab_test_imgpath(p='astro'):
-    import kwimage
-    fpath = kwimage.grab_test_image_fpath('astro')
+    from pyhesaff._demodata import grab_test_image_fpath
+    fpath = grab_test_image_fpath(p)
     # Old and broken
     # fpath = ub.grabdata('https://i.imgur.com/KXhKM72.png',
     #                     fname='astro.png',
