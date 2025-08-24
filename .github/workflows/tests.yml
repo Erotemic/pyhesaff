@@ -319,7 +319,7 @@ jobs:
         GPG_KEYID=$(cat dev/public_gpg_key)
         echo "GPG_KEYID = '$GPG_KEYID'"
         GPG_SIGN_CMD="$GPG_EXECUTABLE --batch --yes --detach-sign --armor --local-user $GPG_KEYID"
-        WHEEL_PATHS=(wheelhouse/*.whl wheelhouse/*.tar.gz)
+        WHEEL_PATHS=(wheelhouse/*.whl)
         WHEEL_PATHS_STR=$(printf '"%s" ' "${WHEEL_PATHS[@]}")
         echo "$WHEEL_PATHS_STR"
         for WHEEL_PATH in "${WHEEL_PATHS[@]}"
@@ -332,17 +332,15 @@ jobs:
         done
         ls -la wheelhouse
         python -m pip install opentimestamps-client
-        ots stamp wheelhouse/*.whl wheelhouse/*.tar.gz wheelhouse/*.asc
+        ots stamp wheelhouse/*.whl wheelhouse/*.asc
         ls -la wheelhouse
-        twine upload --username __token__ --password "$TWINE_PASSWORD" --repository-url "$TWINE_REPOSITORY_URL" wheelhouse/*.whl wheelhouse/*.tar.gz --skip-existing --verbose || { echo "failed to twine upload" ; exit 1; }
+        twine upload --username __token__ --password "$TWINE_PASSWORD" --repository-url "$TWINE_REPOSITORY_URL" wheelhouse/*.whl --skip-existing --verbose || { echo "failed to twine upload" ; exit 1; }
     - uses: actions/upload-artifact@v4.4.0
       name: Upload deploy artifacts
       with:
         name: deploy_artifacts
         path: |-
           wheelhouse/*.whl
-          wheelhouse/*.zip
-          wheelhouse/*.tar.gz
           wheelhouse/*.asc
           wheelhouse/*.ots
   live_deploy:
@@ -389,7 +387,7 @@ jobs:
         GPG_KEYID=$(cat dev/public_gpg_key)
         echo "GPG_KEYID = '$GPG_KEYID'"
         GPG_SIGN_CMD="$GPG_EXECUTABLE --batch --yes --detach-sign --armor --local-user $GPG_KEYID"
-        WHEEL_PATHS=(wheelhouse/*.whl wheelhouse/*.tar.gz)
+        WHEEL_PATHS=(wheelhouse/*.whl)
         WHEEL_PATHS_STR=$(printf '"%s" ' "${WHEEL_PATHS[@]}")
         echo "$WHEEL_PATHS_STR"
         for WHEEL_PATH in "${WHEEL_PATHS[@]}"
@@ -402,17 +400,15 @@ jobs:
         done
         ls -la wheelhouse
         python -m pip install opentimestamps-client
-        ots stamp wheelhouse/*.whl wheelhouse/*.tar.gz wheelhouse/*.asc
+        ots stamp wheelhouse/*.whl wheelhouse/*.asc
         ls -la wheelhouse
-        twine upload --username __token__ --password "$TWINE_PASSWORD" --repository-url "$TWINE_REPOSITORY_URL" wheelhouse/*.whl wheelhouse/*.tar.gz --skip-existing --verbose || { echo "failed to twine upload" ; exit 1; }
+        twine upload --username __token__ --password "$TWINE_PASSWORD" --repository-url "$TWINE_REPOSITORY_URL" wheelhouse/*.whl --skip-existing --verbose || { echo "failed to twine upload" ; exit 1; }
     - uses: actions/upload-artifact@v4.4.0
       name: Upload deploy artifacts
       with:
         name: deploy_artifacts
         path: |-
           wheelhouse/*.whl
-          wheelhouse/*.zip
-          wheelhouse/*.tar.gz
           wheelhouse/*.asc
           wheelhouse/*.ots
   release:
