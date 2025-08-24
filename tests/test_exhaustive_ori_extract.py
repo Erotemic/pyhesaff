@@ -1,7 +1,4 @@
-#!/usr/bin/env python
-from __future__ import absolute_import, division, print_function
 import numpy as np
-import utool as ut
 
 
 def double_detect(img_fpath, **kw):
@@ -20,12 +17,6 @@ def test_ori_extract_main():
     CommandLine:
         python -m pyhesaff.tests.test_exhaustive_ori_extract --test-test_ori_extract_main
         python -m pyhesaff.tests.test_exhaustive_ori_extract --test-test_ori_extract_main --show
-
-    # Example:
-    #     >>> # GUI_DOCTEST
-    #     >>> from pyhesaff.tests.test_exhaustive_ori_extract import *  # NOQA
-    #     >>> test_ori_extract_main()
-    #     >>> ut.show_if_requested()
     """
     import pytest
     pytest.skip('Broken CI')
@@ -40,7 +31,8 @@ def test_ori_extract_main():
     # Read data
     print('[rotinvar] loading test data')
 
-    img_fpath = ut.grab_test_imgpath('jeff.png')
+    import utool as ut
+    img_fpath = ut.grab_test_imgpath()
     imgL = gtool.cvt_BGR2L(gtool.imread(img_fpath))
     detect_kw0 = {
     }

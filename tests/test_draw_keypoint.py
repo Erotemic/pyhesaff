@@ -1,9 +1,6 @@
 #!/usr/bin/env python
-from __future__ import absolute_import, division, print_function
 import numpy as np
 import itertools as it
-from six.moves import range
-import six
 
 
 px_ = 0
@@ -148,7 +145,7 @@ def test_draw_keypoint_main():
         skew = (MIN_SWEW * (1 - beta))  + (MAX_SKEW * (beta))
         ysca = (MIN_Y    * (1 - beta))  + (MAX_Y    * (beta))
 
-        kpts, sifts = test_shape(pnum=six.next(pnum_),
+        kpts, sifts = test_shape(pnum=next(pnum_),
                                  ori=ori,
                                  skew=skew,
                                  xscale=xsca,

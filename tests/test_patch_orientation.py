@@ -1,12 +1,11 @@
-#!/usr/bin/env python
-from __future__ import absolute_import, division, print_function
 import numpy as np
-import utool
 
 
 def TEST_ptool_find_kpts_direction(imgBGR, kpts):
     import vtool.patch as ptool
-    hrint = utool.horiz_print
+    import ubelt as ub
+    def hrint(*args):
+        print(ub.hzcat(args))
     print('[rotinvar] +---')
     print('[rotinvar] | 3) Find dominant orientation in histogram')
     hrint('[rotinvar] |  * kpts.shape = ', (kpts.shape,))
@@ -122,8 +121,6 @@ def test_patch_ori_main():
     #     >>> # xdoctest: +SKIP
     #     >>> from pyhesaff.tests.test_patch_orientation import *  # NOQA
     #     >>> test_patch_ori_main()
-    #     >>> import utool as ut
-    #     >>> ut.show_if_requested()
     """
     import pytest
     pytest.skip('Broken in CI')

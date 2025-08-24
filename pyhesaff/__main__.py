@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
 
 
 def detect_feats_main():
@@ -10,7 +8,7 @@ def detect_feats_main():
     import cv2
     import ubelt as ub
 
-    img_fpath = grab_test_imgpath(ub.argval('--fname', default='astro.png'))
+    img_fpath = ub.argval('--fname', default=grab_test_imgpath())
     kwargs = argparse_hesaff_params()
     print('kwargs = %r' % (kwargs,))
 
