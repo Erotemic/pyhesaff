@@ -580,7 +580,7 @@ def detect_feats_in_image(img, **kwargs):
         >>> img = imread(img_fpath)
         >>> (kpts, vecs) = detect_feats_in_image(img)
         >>> # xdoctest: +REQUIRES(--show)
-        >>> import plottool as pt
+        >>> import plottool_ibeis as pt
         >>> pt.interact_keypoints.ishow_keypoints(img, kpts, vecs, ori=True,
         >>>                                       ell_alpha=.4, color='distinct')
         >>> pt.set_figtitle('Detect Kpts in Image')
@@ -710,7 +710,7 @@ def extract_vecs(img_fpath, kpts, **kwargs):
         >>> print('errors.sum() = %r' % (errors.sum(),))
         >>> # VISUALIZTION
         >>> # xdoctest: +REQUIRES(--show)
-        >>> import plottool as pt
+        >>> import plottool_ibeis as pt
         >>> # Extract the underlying grayscale patches
         >>> img = imread(img_fpath)
         >>> patch_list = extract_patches(img, kpts)
@@ -765,7 +765,7 @@ def extract_patches(img_or_fpath, kpts, **kwargs):
         >>> py_patch_list_ = np.array(vt.get_warped_patches(img_or_fpath, kpts, patch_size=41)[0])
         >>> py_patch_list = np.array(vt.convert_image_list_colorspace(py_patch_list_, 'gray'))
         >>> # xdoctest: +REQUIRES(--show)
-        >>> import plottool as pt
+        >>> import plottool_ibeis as pt
         >>> ax = pt.draw_patches_and_sifts(cpp_patch_list, None, pnum=(1, 2, 1))
         >>> ax.set_title('C++ extracted')
         >>> ax = pt.draw_patches_and_sifts(py_patch_list, None, pnum=(1, 2, 2))
@@ -837,7 +837,7 @@ def extract_desc_from_patches(patch_list):
         >>> errors = (vecs_list.astype(float) - vecs_array.astype(float)).sum(axis=1)
         >>> print('Errors: %r' % (errors,))
         >>> # xdoctest: +REQUIRES(--show)
-        >>> import plottool as pt
+        >>> import plottool_ibeis as pt
         >>> ax = pt.draw_patches_and_sifts(patch_list, vecs_array, pnum=(1, 2, 1))
         >>> ax.set_title('patch extracted')
         >>> ax = pt.draw_patches_and_sifts(patch_list, vecs_list, pnum=(1, 2, 2))
@@ -907,7 +907,7 @@ def test_rot_invar():
     """
     import cv2
     import vtool as vt
-    import plottool as pt
+    import plottool_ibeis as pt
     TAU = 2 * np.pi
     fnum = pt.next_fnum()
     NUM_PTS = 5  # 9

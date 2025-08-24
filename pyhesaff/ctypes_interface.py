@@ -20,7 +20,10 @@ def get_plat_specifier():
     """
     Standard platform specifier used by distutils
     """
-    import distutils
+    try:
+        import distutils
+    except ImportError:
+        return get_plat_specifier2()
     try:
         plat_name = distutils.util.get_platform()
     except AttributeError:
@@ -31,8 +34,105 @@ def get_plat_specifier():
     return plat_specifier
 
 
+def _py_ver_str():
+    """Return 'MAJOR.MINOR' (e.g., '3.12')."""
+    return f"{sys.version_info.major}.{sys.version_info.minor}"
+
+
+def _norm_arch():
+    """Normalize common architecture names to the ones your code expects."""
+    import platform
+    m = (platform.machine() or "").lower()
+    if m in {"x86_64", "amd64"}:
+        return "x86_64"
+    if m in {"i386", "i686", "x86"}:
+        return "i686"
+    if m in {"aarch64", "arm64"}:
+        return "arm64"
+    return m or ("x86_64" if sys.maxsize > 2**32 else "i686")
+
+
+def get_plat_specifier2():
+    """
+    Standard platform specifier (distutils-free).
+    Mirrors your existing format: '.<plat>-<pyver>' + optional '-pydebug'.
+    """
+    import sysconfig
+    plat_name = sysconfig.get_platform() or sys.platform
+    plat_specifier = f".{plat_name}-{_py_ver_str()}"
+    if hasattr(sys, "gettotalrefcount"):  # CPython debug builds
+        plat_specifier += "-pydebug"
+    return plat_specifier
+
+
+def get_candidate_plat_specifiers2():
+    """
+    Produce a list of plausible platform suffixes without using distutils.
+    Keeps your legacy candidates and adds a few modern ones (manylinux, macOS).
+    """
+    import sysconfig
+    arch = _norm_arch()
+    py_ver = _py_ver_str()
+    plat_name = sysconfig.get_platform() or sys.platform
+
+    plat_name_cands = [plat_name]
+
+    if sys.platform.startswith("linux"):
+        # Keep broad fallbacks and add some manylinux variants that show up in practice.
+        plat_name_cands += [
+            "linux",
+            "manylinux",
+            "manylinux1",
+            "manylinux2010",
+            "manylinux2014",
+        ]
+        # Wheel-style tags sometimes include glibc floor; include a couple likely ones.
+        # (Your filenames use '-' not '_', but we’ll keep your format below.)
+        if arch:
+            plat_name_cands += [
+                f"manylinux_2_17_{arch}",
+                f"manylinux_2_5_{arch}",
+            ]
+
+    elif sys.platform.startswith("darwin"):
+        # Keep your historical macOS entries; add modern versions and universal2.
+        plat_name_cands += [
+            "macosx-10.6",
+            "macosx-10.7",
+            "macosx-10.9",
+            "macosx-10.12",
+            "macosx-11.0",
+            "macosx-12.0",
+            "macosx-13.0",
+            "macosx-10.6-intel",
+            "macosx-10.7-intel",
+            "macosx-10.9-intel",
+            "macosx-10.12-intel",
+            "macosx-11.0-universal2",
+            "macosx-12.0-universal2",
+        ]
+
+    elif sys.platform.startswith("win32"):
+        # Keep both in case filenames vary.
+        plat_name_cands += ["win-amd64", "win32"]
+
+    spec_list = []
+    for pn in plat_name_cands:
+        spec_list.extend([
+            f".{pn}-{py_ver}",
+            f".{pn}-{arch}-{py_ver}",
+        ])
+
+    # Bare suffix (your original behavior)
+    spec_list.append("")
+    return spec_list
+
+
 def get_candidate_plat_specifiers():
-    import distutils
+    try:
+        import distutils
+    except ImportError:
+        return get_candidate_plat_specifiers2()
     if sys.maxsize > 2 ** 32:
         arch = 'x86_64'  # TODO: get correct arch spec
     else:

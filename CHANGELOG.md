@@ -3,7 +3,10 @@
 We [keep a Changelog](https://keepachangelog.com/en/1.0.0/) using [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Version 2.1.2] - Unreleased
+## Version 2.1.3 - Unreleased
+
+
+## [Version 2.1.2] - Released 2025-08-23
 
 ### Changed
 
