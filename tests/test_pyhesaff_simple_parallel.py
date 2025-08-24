@@ -1,9 +1,6 @@
 #!/usr/bin/env python
-from __future__ import absolute_import, division, print_function
 import numpy as np
-from six.moves import zip
 import ubelt as ub
-import utool as ut
 
 
 def test_simple_parallel():
@@ -35,6 +32,7 @@ def test_simple_parallel():
     pytest.skip('Broken in CI')
 
     import pyhesaff
+    import utool as ut
     # import kwimage
     test_fnames = ['carl.jpg', 'lena.png', 'zebra.png', 'ada.jpg', 'star.png']
     img_fpaths = list(map(ut.grab_test_imgpath, test_fnames)) * 2

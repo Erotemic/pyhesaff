@@ -1,2 +1,2 @@
 def test_import():
-    import pyhesaff
+    import pyhesaff  # NOQA

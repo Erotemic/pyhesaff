@@ -13,6 +13,8 @@ import ubelt as ub
 from os.path import realpath, dirname
 from collections import OrderedDict
 from pyhesaff import ctypes_interface
+from typing import Literal
+from typing import Sequence
 
 #============================
 # hesaff ctypes interface
@@ -34,8 +36,19 @@ bool_t    = ctypes.c_bool
 float_t   = ctypes.c_float
 #byte_t    = ctypes.c_char
 # array ctypes
-FLAGS_RW = str('aligned, c_contiguous, writeable')
-FLAGS_RO = str('aligned, c_contiguous')
+
+
+AllowedFlag = Literal[
+    "C_CONTIGUOUS", "CONTIGUOUS", "C",
+    "F_CONTIGUOUS", "FORTRAN", "F",
+    "ALIGNED", "A",
+    "WRITEABLE", "W",
+    "OWNDATA", "O",
+    "WRITEBACKIFCOPY", "X",
+]
+
+FLAGS_RW: Sequence[AllowedFlag] = ['ALIGNED', 'C_CONTIGUOUS', 'WRITEABLE']
+FLAGS_RO: Sequence[AllowedFlag] = ['ALIGNED', 'C_CONTIGUOUS']
 #FLAGS_RW = 'aligned, writeable'
 kpts_t       = np.ctypeslib.ndpointer(dtype=kpts_dtype, ndim=2, flags=FLAGS_RW)
 vecs_t       = np.ctypeslib.ndpointer(dtype=vecs_dtype, ndim=2, flags=FLAGS_RW)
@@ -84,11 +97,14 @@ HESAFF_PARAM_DICT = OrderedDict([(key, val) for (type_, key, val) in HESAFF_TYPE
 HESAFF_PARAM_TYPES = [type_ for (type_, key, val) in HESAFF_TYPED_PARAMS]
 
 
-def grab_test_imgpath(p):
-    fpath = ub.grabdata('https://i.imgur.com/KXhKM72.png',
-                        fname='astro.png',
-                        hash_prefix='160b6e5989d2788c0296eac45b33e90fe612da23',
-                        hasher='sha1')
+def grab_test_imgpath(p='astro'):
+    from pyhesaff._demodata import grab_test_image_fpath
+    fpath = grab_test_image_fpath(p)
+    # Old and broken
+    # fpath = ub.grabdata('https://i.imgur.com/KXhKM72.png',
+    #                     fname='astro.png',
+    #                     hash_prefix='160b6e5989d2788c0296eac45b33e90fe612da23',
+    #                     hasher='sha1')
     return fpath
 
 
@@ -406,7 +422,7 @@ def detect_feats(img_fpath, use_adaptive_scale=False, nogravity_hack=False, **kw
         >>> # Test simple detect
         >>> from pyhesaff._pyhesaff import *  # NOQA
         >>> TAU = 2 * np.pi
-        >>> img_fpath = grab_test_imgpath(ub.argval('--fname', default='astro.png'))
+        >>> img_fpath = grab_test_imgpath(ub.argval('--fname', default='astro'))
         >>> kwargs = argparse_hesaff_params()
         >>> print('kwargs = %r' % (kwargs,))
         >>> (kpts, vecs) = detect_feats(img_fpath, **kwargs)
@@ -493,8 +509,8 @@ def detect_feats_list(image_paths_list, **kwargs):
     Example:
         >>> # ENABLE_DOCTEST
         >>> from pyhesaff._pyhesaff import *  # NOQA
-        >>> fpath = grab_test_imgpath('astro.png')
-        >>> image_paths_list = [grab_test_imgpath('carl.jpg'), grab_test_imgpath('star.png'), fpath]
+        >>> fpath = grab_test_imgpath('astro')
+        >>> image_paths_list = [grab_test_imgpath('carl'), grab_test_imgpath('superstar'), fpath]
         >>> (kpts_list, vecs_list) = detect_feats_list(image_paths_list)
         >>> #print((kpts_list, vecs_list))
         >>> # Assert that the normal version agrees
@@ -560,7 +576,7 @@ def detect_feats_in_image(img, **kwargs):
     Example:
         >>> # ENABLE_DOCTEST
         >>> from pyhesaff._pyhesaff import *  # NOQA
-        >>> img_fpath = grab_test_imgpath('astro.png')
+        >>> img_fpath = grab_test_imgpath('astro')
         >>> img = imread(img_fpath)
         >>> (kpts, vecs) = detect_feats_in_image(img)
         >>> # xdoctest: +REQUIRES(--show)
@@ -605,7 +621,7 @@ def detect_num_feats_in_image(img, **kwargs):
     Example:
         >>> # ENABLE_DOCTEST
         >>> from pyhesaff._pyhesaff import *  # NOQA
-        >>> img_fpath = grab_test_imgpath('zebra.png')
+        >>> img_fpath = grab_test_imgpath('astro')
         >>> img = imread(img_fpath)
         >>> nKpts = detect_num_feats_in_image(img)
         >>> kpts, vecs = detect_feats_in_image(img)
@@ -619,7 +635,7 @@ def detect_num_feats_in_image(img, **kwargs):
         >>> setup = ub.codeblock(
             '''
             import pyhesaff
-            img_fpath = grab_test_imgpath('carl.jpg')
+            img_fpath = grab_test_imgpath('carl')
             img = imread(img_fpath)
             ''')
         >>> stmt_list = [
@@ -668,7 +684,7 @@ def extract_vecs(img_fpath, kpts, **kwargs):
     Example:
         >>> # ENABLE_DOCTEST
         >>> from pyhesaff._pyhesaff import *  # NOQA
-        >>> img_fpath = grab_test_imgpath('carl.jpg')
+        >>> img_fpath = grab_test_imgpath('carl')
         >>> kpts = np.array([[20, 25, 5.21657705, -5.11095951, 24.1498699, 0],
         >>>                  [29, 25, 2.35508823, -5.11095952, 24.1498692, 0],
         >>>                  [30, 30, 12.2165705, 12.01909553, 10.5286992, 0],
@@ -681,7 +697,7 @@ def extract_vecs(img_fpath, kpts, **kwargs):
     Example:
         >>> # ENABLE_DOCTEST
         >>> from pyhesaff._pyhesaff import *  # NOQA
-        >>> img_fpath = grab_test_imgpath(ub.argval('--fname', default='astro.png'))
+        >>> img_fpath = grab_test_imgpath('astro')
         >>> # Extract original keypoints
         >>> kpts, vecs1 = detect_feats(img_fpath)
         >>> # Re-extract keypoints
@@ -739,7 +755,7 @@ def extract_patches(img_or_fpath, kpts, **kwargs):
         >>> from pyhesaff._pyhesaff import *  # NOQA
         >>> import vtool as vt
         >>> kwargs = {}
-        >>> img_fpath = grab_test_imgpath('carl.jpg')
+        >>> img_fpath = grab_test_imgpath('carl')
         >>> img = imread(img_fpath)
         >>> img_or_fpath = img
         >>> kpts, vecs1 = detect_feats(img_fpath)
@@ -787,7 +803,7 @@ def extract_desc_from_patches(patch_list):
         >>> # xdoctest: +REQUIRES(module:vtool)
         >>> from pyhesaff._pyhesaff import *  # NOQA
         >>> import vtool as vt
-        >>> img_fpath = grab_test_imgpath(ub.argval('--fname', default='astro.png'))
+        >>> img_fpath = grab_test_imgpath(ub.argval('--fname', default='astro'))
         >>> # First extract keypoints normally
         >>> (orig_kpts_list, orig_vecs_list) = detect_feats(img_fpath)
         >>> # Take 9 keypoints
@@ -803,7 +819,7 @@ def extract_desc_from_patches(patch_list):
     Example:
         >>> # ENABLE_DOCTEST
         >>> from pyhesaff._pyhesaff import *  # NOQA
-        >>> img_fpath = grab_test_imgpath(ub.argval('--fname', default='astro.png'))
+        >>> img_fpath = grab_test_imgpath(ub.argval('--fname', default='astro'))
         >>> # First extract keypoints normally
         >>> (orig_kpts_list, orig_vecs_list) = detect_feats(img_fpath)
         >>> # Take 9 keypoints
@@ -900,7 +916,7 @@ def test_rot_invar():
     next_pnum = pt.make_pnum_nextgen(nRows, nCols)
     # Expand the border a bit around star.png
     pad_ = 100
-    img_fpath = grab_test_imgpath('star.png')
+    img_fpath = grab_test_imgpath('superstar')
     img_fpath2 = vt.pad_image_ondisk(img_fpath, pad_, value=26)
     for theta in theta_list:
         print('-----------------')
