@@ -3,6 +3,13 @@
 We [keep a Changelog](https://keepachangelog.com/en/1.0.0/) using [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Version 2.1.2] - Unreleased
+
+### Changed
+
+* Support 3.13 / 3.14
+
+
 ## [Version 2.1.1] - Released 2023-01-29
 
 ### Changed
