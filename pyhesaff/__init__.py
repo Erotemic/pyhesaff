@@ -1,4 +1,4 @@
-__version__ = '2.1.3'
+__version__ = '2.1.4'
 __author__ = 'Jon Crall'
 __author_email__ = 'erotemic@gmail.com'
 __url__ = 'https://github.com/Erotemic/pyhesaff'
