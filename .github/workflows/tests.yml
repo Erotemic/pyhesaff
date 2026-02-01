@@ -58,6 +58,7 @@ jobs:
         # explicitly here.
         os:
         - ubuntu-latest
+        - windows-latest
         cibw_skip:
         - pp* *-musllinux_*
         arch:
@@ -78,7 +79,14 @@ jobs:
       env:
         CIBW_SKIP: ${{ matrix.cibw_skip }}
         CIBW_ARCHS_LINUX: ${{ matrix.arch }}
+        CIBW_ARCHS_WINDOWS: AMD64
         CIBW_ENVIRONMENT: PYTHONUTF8=1
+        CIBW_ENVIRONMENT_WINDOWS: >-
+          PYTHONUTF8=1
+          VCPKG_ROOT=C:/vcpkg
+          VCPKG_TARGET_TRIPLET=x64-windows
+          CMAKE_ARGS=-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
+          PATH=C:/vcpkg/installed/x64-windows/bin;%PATH%
         PYTHONUTF8: '1'
     - name: Show built files
       shell: bash
@@ -171,6 +179,22 @@ jobs:
           install-extras: tests,optional,headless
           os: ubuntu-latest
           arch: auto
+        - python-version: '3.9'
+          install-extras: tests,optional,headless
+          os: windows-latest
+          arch: auto
+        - python-version: '3.10'
+          install-extras: tests,optional,headless
+          os: windows-latest
+          arch: auto
+        - python-version: '3.12'
+          install-extras: tests,optional,headless
+          os: windows-latest
+          arch: auto
+        - python-version: '3.13'
+          install-extras: tests,optional,headless
+          os: windows-latest
+          arch: auto
     steps:
     - name: Checkout source
       uses: actions/checkout@v4.2.2
@@ -201,22 +225,28 @@ jobs:
         echo "Installing helpers: setuptools"
         python -m uv pip install setuptools>=0.8 setuptools_scm wheel build -U
         echo "Installing helpers: tomli and pkginfo"
-        python -m uv pip install tomli pkginfo
+        python -m uv pip install tomli pkginfo packaging
         export WHEEL_FPATH=$(python -c "if 1:
             import pathlib
+            from packaging import tags
+            from packaging.utils import parse_wheel_filename
             dist_dpath = pathlib.Path('wheelhouse')
-            candidates = list(dist_dpath.glob('pyhesaff*.whl'))
-            candidates += list(dist_dpath.glob('pyhesaff*.tar.gz'))
-            fpath = sorted(candidates)[-1]
+            candidates = sorted(dist_dpath.glob('pyhesaff*.whl'))
+            if not candidates:
+                raise SystemExit('No wheels found in wheelhouse')
+            sys_tags = set(tags.sys_tags())
+            def is_compatible(path):
+                _, _, wheel_tags = parse_wheel_filename(path.name)
+                return any(tag in sys_tags for tag in wheel_tags)
+            compatible = [path for path in candidates if is_compatible(path)]
+            fpath = sorted(compatible or candidates)[-1]
             print(str(fpath).replace(chr(92), chr(47)))
         ")
         export MOD_VERSION=$(python -c "if 1:
-            from pkginfo import Wheel, SDist
-            import pathlib
+            from packaging.utils import parse_wheel_filename
             fpath = '$WHEEL_FPATH'
-            cls = Wheel if fpath.endswith('.whl') else SDist
-            item = cls(fpath)
-            print(item.version)
+            _, version, _, _ = parse_wheel_filename(fpath.split('/')[-1])
+            print(version)
         ")
         echo "WHEEL_FPATH=$WHEEL_FPATH"
         echo "INSTALL_EXTRAS=$INSTALL_EXTRAS"
@@ -224,6 +254,19 @@ jobs:
         echo "MOD_VERSION=$MOD_VERSION"
         python -m uv pip install --prerelease=allow "pyhesaff[$INSTALL_EXTRAS]==$MOD_VERSION" -f wheelhouse
         echo "Install finished."
+    - name: Windows smoke test
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |-
+        python - <<'PY'
+        import os
+        import sys
+        repo_dir = os.path.abspath(os.getcwd())
+        sys.path = [path for path in sys.path if os.path.abspath(path) != repo_dir]
+        import pyhesaff
+        print("pyhesaff imported from:", pyhesaff.__file__)
+        print("cpp_version:", pyhesaff.get_cpp_version())
+        PY
     - name: Test wheel ${{ matrix.install-extras }}
       shell: bash
       env:
