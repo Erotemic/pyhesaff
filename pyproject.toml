@@ -31,6 +31,7 @@ build = "cp39-* cp310-* cp311-* cp312-* cp313-* cp314-*"
 build-frontend = "build"
 skip = "pp* *-musllinux_*"
 build-verbosity = 1
+environment = "PYTHONUTF8=1"
 # testing on the build container fails because we need the cv2
 # module which needs a new zlib that we cant use to build with
 # disable testing in cibuildwheel for now (we need to add it in as a postprocessing step)
@@ -58,7 +59,8 @@ yum -y install opencv-devel
 #before-build = "yum install -y opencv-devel"
 
 #[tool.cibuildwheel.windows]
-#before-all = "choco install lz4 -y"
+[tool.cibuildwheel.windows]
+before-all = "vcpkg install opencv4:x64-windows"
 
 #[tool.cibuildwheel.macos]
 #before-all = "brew install lz4"
