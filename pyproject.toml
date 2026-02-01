@@ -58,7 +58,9 @@ yum -y install opencv-devel
 #before-build = "yum install -y opencv-devel"
 
 #[tool.cibuildwheel.windows]
-#before-all = "choco install lz4 -y"
+[tool.cibuildwheel.windows]
+before-all = "vcpkg install opencv4:x64-windows"
+repair-wheel-command = "python -m pip install delvewheel && python -m delvewheel repair --add-path C:\\\\vcpkg\\\\installed\\\\x64-windows\\\\bin -w {dest_dir} {wheel}"
 
 #[tool.cibuildwheel.macos]
 #before-all = "brew install lz4"

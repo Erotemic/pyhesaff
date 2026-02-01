@@ -124,7 +124,11 @@ endif()
 
 
 
-target_include_directories(hesaff PRIVATE ${OpenCV_INCLUDE_DIR})
+set(_opencv_includes "${OpenCV_INCLUDE_DIRS}")
+if(NOT _opencv_includes)
+    set(_opencv_includes "${OpenCV_INCLUDE_DIR}")
+endif()
+target_include_directories(hesaff PRIVATE ${_opencv_includes})
 
 #######################################
 target_link_libraries(hesaff PRIVATE ${OpenCV_LIBRARIES})
@@ -139,7 +143,10 @@ target_link_libraries(hesaff PRIVATE ${OpenCV_LIBRARIES})
 # https://github.com/scikit-build/scikit-build/issues/434
 # Note: if the target is not referenced by package_data in setup.py then the
 # lib will be installed as a data file and not a package file.
-install(TARGETS hesaff LIBRARY DESTINATION "pyhesaff")
+install(TARGETS hesaff
+    RUNTIME DESTINATION "pyhesaff"
+    LIBRARY DESTINATION "pyhesaff"
+    ARCHIVE DESTINATION "pyhesaff")
 
 #message(STATUS CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE})
 
