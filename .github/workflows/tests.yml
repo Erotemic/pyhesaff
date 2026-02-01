@@ -81,7 +81,7 @@ jobs:
         CIBW_ARCHS_LINUX: ${{ matrix.arch }}
         CIBW_ARCHS_WINDOWS: AMD64
         CIBW_ENVIRONMENT: PYTHONUTF8=1
-        CIBW_ENVIRONMENT_WINDOWS: >-
+        CIBW_ENVIRONMENT_WINDOWS: |-
           PYTHONUTF8=1
           VCPKG_ROOT=C:/vcpkg
           VCPKG_TARGET_TRIPLET=x64-windows
