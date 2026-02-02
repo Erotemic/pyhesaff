@@ -70,6 +70,36 @@ message(STATUS "OpenCV_DIR (cache/env) = ${OpenCV_DIR}")
 message(STATUS "OpenCV_ROOT (cache/env) = ${OpenCV_ROOT}")
 message(STATUS "OpenCV_ROOT_DIR (cache/env) = ${OpenCV_ROOT_DIR}")
 message(STATUS "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}")
+message(STATUS "ENV{OpenCV_DIR} = $ENV{OpenCV_DIR}")
+message(STATUS "ENV{OpenCV_ROOT} = $ENV{OpenCV_ROOT}")
+message(STATUS "ENV{OpenCV_ROOT_DIR} = $ENV{OpenCV_ROOT_DIR}")
+message(STATUS "ENV{VCPKG_ROOT} = $ENV{VCPKG_ROOT}")
+message(STATUS "ENV{VCPKG_TARGET_TRIPLET} = $ENV{VCPKG_TARGET_TRIPLET}")
+message(STATUS "ENV{VCPKG_INSTALLED_DIR} = $ENV{VCPKG_INSTALLED_DIR}")
+message(STATUS "ENV{CMAKE_PREFIX_PATH} = $ENV{CMAKE_PREFIX_PATH}")
+message(STATUS "ENV{PATH} = $ENV{PATH}")
+set(_opencv_probe_dirs
+    "${OpenCV_DIR}"
+    "$ENV{OpenCV_DIR}"
+    "${OpenCV_ROOT}"
+    "$ENV{OpenCV_ROOT}"
+    "${OpenCV_ROOT_DIR}"
+    "$ENV{OpenCV_ROOT_DIR}"
+    "$ENV{VCPKG_ROOT}/installed/$ENV{VCPKG_TARGET_TRIPLET}/share/opencv4"
+    "$ENV{VCPKG_ROOT}/installed/x64-windows/share/opencv4"
+)
+foreach(_opencv_probe_dir IN LISTS _opencv_probe_dirs)
+  if(_opencv_probe_dir)
+    message(STATUS "OpenCV probe dir: ${_opencv_probe_dir}")
+    if(EXISTS "${_opencv_probe_dir}")
+      file(GLOB _opencv_probe_entries "${_opencv_probe_dir}/*")
+      list(LENGTH _opencv_probe_entries _opencv_probe_count)
+      message(STATUS "  exists with ${_opencv_probe_count} entries")
+    else()
+      message(STATUS "  does not exist")
+    endif()
+  endif()
+endforeach()
 find_package( OpenCV REQUIRED )
 IF(OpenCV_FOUND)
   message(STATUS "Found OpenCV! ^_^")
