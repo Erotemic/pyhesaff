@@ -71,22 +71,25 @@ jobs:
       if: runner.os == 'Linux' && matrix.arch != 'auto'
       with:
         platforms: all
-    - name: Prepare vcpkg cache directories (Windows)
+    - name: Set vcpkg cache paths (Windows)
       if: runner.os == 'Windows'
-      shell: bash
-      run: |-
-        mkdir -p /c/vcpkg-bincache
-        mkdir -p /c/vcpkg/downloads
-    - name: Restore vcpkg cache (Windows)
+      shell: pwsh
+      run: |
+        "VCPKG_ARCHIVES_DIR=$env:LOCALAPPDATA\vcpkg\archives" >> $env:GITHUB_ENV
+        "VCPKG_DOWNLOADS_DIR=C:\vcpkg\downloads" >> $env:GITHUB_ENV
+        New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\vcpkg\archives" | Out-Null
+        New-Item -ItemType Directory -Force -Path "C:\vcpkg\downloads" | Out-Null
+    - name: Restore vcpkg caches (Windows)
       if: runner.os == 'Windows'
       id: vcpkg-cache
       uses: actions/cache/restore@v4
       with:
         path: |-
-          C:\vcpkg-bincache
-          C:\vcpkg\downloads
-        key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'vcpkg.lock.json') }}
-        restore-keys: vcpkg-${{ runner.os }}-
+          ${{ env.VCPKG_ARCHIVES_DIR }}
+          ${{ env.VCPKG_DOWNLOADS_DIR }}
+        key: vcpkg-${{ runner.os }}-${{ hashFiles('pyproject.toml', 'CMakeLists.txt', 'setup.py') }}
+        restore-keys: |
+          vcpkg-${{ runner.os }}-
     - name: Build binary wheels
       uses: pypa/cibuildwheel@v3.1.2
       with:
@@ -108,19 +111,20 @@ jobs:
           VCPKG_DOWNLOADS=C:/vcpkg/downloads
           PATH=C:/vcpkg/installed/x64-windows/bin;{PATH}
         PYTHONUTF8: '1'
+        VCPKG_ROOT: C:\vcpkg
     - name: Show cibuildwheel Windows env (Windows)
       if: runner.os == 'Windows'
       shell: bash
       run: |-
         echo "CIBW_ENVIRONMENT_WINDOWS:"
         printf '%s\n' "$CIBW_ENVIRONMENT_WINDOWS"
-    - name: Save vcpkg cache (Windows)
+    - name: Save vcpkg caches (Windows, even on failure)
       if: runner.os == 'Windows' && always()
       uses: actions/cache/save@v4
       with:
         path: |-
-          C:\vcpkg-bincache
-          C:\vcpkg\downloads
+          ${{ env.VCPKG_ARCHIVES_DIR }}
+          ${{ env.VCPKG_DOWNLOADS_DIR }}
         key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
     - name: Show built files
       shell: bash
