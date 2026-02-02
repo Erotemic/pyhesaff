@@ -71,6 +71,22 @@ jobs:
       if: runner.os == 'Linux' && matrix.arch != 'auto'
       with:
         platforms: all
+    - name: Prepare vcpkg cache directories (Windows)
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |-
+        mkdir -p /c/vcpkg-bincache
+        mkdir -p /c/vcpkg/downloads
+    - name: Restore vcpkg cache (Windows)
+      if: runner.os == 'Windows'
+      id: vcpkg-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: |-
+          C:\vcpkg-bincache
+          C:\vcpkg\downloads
+        key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'vcpkg.lock.json') }}
+        restore-keys: vcpkg-${{ runner.os }}-
     - name: Build binary wheels
       uses: pypa/cibuildwheel@v3.1.2
       with:
@@ -81,6 +97,14 @@ jobs:
         CIBW_ARCHS_LINUX: ${{ matrix.arch }}
         CIBW_ARCHS_WINDOWS: AMD64
         PYTHONUTF8: '1'
+    - name: Save vcpkg cache (Windows)
+      if: runner.os == 'Windows' && always()
+      uses: actions/cache/save@v4
+      with:
+        path: |-
+          C:\vcpkg-bincache
+          C:\vcpkg\downloads
+        key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
     - name: Show built files
       shell: bash
       run: ls -la wheelhouse
