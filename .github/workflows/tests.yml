@@ -57,7 +57,7 @@ jobs:
         # the standard [tool.cibuildwheel] section in pyproject.toml and set
         # explicitly here.
         os:
-        - windows-latest
+        - ubuntu-latest
         cibw_skip:
         - pp* *-musllinux_*
         arch:
@@ -70,25 +70,6 @@ jobs:
       if: runner.os == 'Linux' && matrix.arch != 'auto'
       with:
         platforms: all
-    - name: Set vcpkg cache paths (Windows)
-      if: runner.os == 'Windows'
-      shell: pwsh
-      run: |
-        "VCPKG_ARCHIVES_DIR=$env:LOCALAPPDATA\vcpkg\archives" >> $env:GITHUB_ENV
-        "VCPKG_DOWNLOADS_DIR=C:\vcpkg\downloads" >> $env:GITHUB_ENV
-        New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\vcpkg\archives" | Out-Null
-        New-Item -ItemType Directory -Force -Path "C:\vcpkg\downloads" | Out-Null
-    - name: Restore vcpkg caches (Windows)
-      if: runner.os == 'Windows'
-      id: vcpkg-cache
-      uses: actions/cache/restore@v4
-      with:
-        path: |-
-          ${{ env.VCPKG_ARCHIVES_DIR }}
-          ${{ env.VCPKG_DOWNLOADS_DIR }}
-        key: vcpkg-${{ runner.os }}-${{ hashFiles('pyproject.toml', 'CMakeLists.txt', 'setup.py') }}
-        restore-keys: |
-          vcpkg-${{ runner.os }}-
     - name: Build binary wheels
       uses: pypa/cibuildwheel@v3.1.2
       with:
@@ -97,33 +78,8 @@ jobs:
       env:
         CIBW_SKIP: ${{ matrix.cibw_skip }}
         CIBW_ARCHS_LINUX: ${{ matrix.arch }}
-        CIBW_ARCHS_WINDOWS: AMD64
-        CIBW_ENVIRONMENT_WINDOWS: |
-          VCPKG_ROOT=C:/vcpkg
-          VCPKG_TARGET_TRIPLET=x64-windows
-          OpenCV_DIR=C:/vcpkg/installed/x64-windows/share/opencv4
-          OpenCV_ROOT=C:/vcpkg/installed/x64-windows
-          CMAKE_PREFIX_PATH=C:/vcpkg/installed/x64-windows
-          CMAKE_ARGS=-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake;-DOpenCV_DIR=C:/vcpkg/installed/x64-windows/share/opencv4
-          VCPKG_BINARY_SOURCES=clear;files,C:/vcpkg-bincache,readwrite
-          VCPKG_DOWNLOADS=C:/vcpkg/downloads
-          PATH=C:/vcpkg/installed/x64-windows/bin;{PATH}
+        CIBW_ENVIRONMENT: PYTHONUTF8=1
         PYTHONUTF8: '1'
-        VCPKG_ROOT: C:\vcpkg
-    - name: Show cibuildwheel Windows env (Windows)
-      if: runner.os == 'Windows'
-      shell: bash
-      run: |-
-        echo "CIBW_ENVIRONMENT_WINDOWS:"
-        printf '%s\n' "$CIBW_ENVIRONMENT_WINDOWS"
-    - name: Save vcpkg caches (Windows, even on failure)
-      if: runner.os == 'Windows' && always()
-      uses: actions/cache/save@v4
-      with:
-        path: |-
-          ${{ env.VCPKG_ARCHIVES_DIR }}
-          ${{ env.VCPKG_DOWNLOADS_DIR }}
-        key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
     - name: Show built files
       shell: bash
       run: ls -la wheelhouse
@@ -184,20 +140,36 @@ jobs:
         # for testing instead of using the more concise matrix notation.
         include:
         - python-version: '3.9'
+          install-extras: tests-strict,runtime-strict,headless-strict
+          os: ubuntu-latest
+          arch: auto
+        - python-version: '3.13'
+          install-extras: tests-strict,runtime-strict,optional-strict,headless-strict
+          os: ubuntu-latest
+          arch: auto
+        - python-version: '3.9'
           install-extras: tests,optional,headless
-          os: windows-latest
+          os: ubuntu-latest
           arch: auto
         - python-version: '3.10'
           install-extras: tests,optional,headless
-          os: windows-latest
+          os: ubuntu-latest
+          arch: auto
+        - python-version: '3.11'
+          install-extras: tests,optional,headless
+          os: ubuntu-latest
           arch: auto
         - python-version: '3.12'
           install-extras: tests,optional,headless
-          os: windows-latest
+          os: ubuntu-latest
           arch: auto
         - python-version: '3.13'
           install-extras: tests,optional,headless
-          os: windows-latest
+          os: ubuntu-latest
+          arch: auto
+        - python-version: 3.14.0-rc.1
+          install-extras: tests,optional,headless
+          os: ubuntu-latest
           arch: auto
     steps:
     - name: Checkout source
@@ -217,72 +189,6 @@ jobs:
         pattern: wheels-*
         merge-multiple: true
         path: wheelhouse
-    - name: Inspect wheel contents (Windows)
-      if: runner.os == 'Windows'
-      shell: bash
-      run: |-
-        python - <<'PY'
-        import pathlib
-        import zipfile
-        dist_dpath = pathlib.Path("wheelhouse")
-        wheels = sorted(dist_dpath.glob("pyhesaff*.whl"))
-        print("Found wheels:", [w.name for w in wheels])
-        for wheel in wheels:
-            print("===", wheel.name, "===")
-            with zipfile.ZipFile(wheel) as zf:
-                members = [m for m in zf.namelist() if "pyhesaff/" in m]
-                for name in sorted(members):
-                    print(name)
-        PY
-    - name: Show wheel DLL dependencies (Windows)
-      if: runner.os == 'Windows'
-      shell: bash
-      run: |-
-        python -m pip install delvewheel
-        python - <<'PY'
-        import pathlib
-        import subprocess
-        import sys
-        wheels = sorted(pathlib.Path("wheelhouse").glob("pyhesaff*.whl"))
-        for wheel in wheels:
-            print("===", wheel.name, "===")
-            subprocess.run([sys.executable, "-m", "delvewheel", "show", str(wheel)], check=False)
-        PY
-    - name: Inspect hesaff.dll imports (Windows)
-      if: runner.os == 'Windows'
-      shell: bash
-      run: |-
-        python -m pip install pefile
-        python - <<'PY'
-        import os
-        import pathlib
-        import zipfile
-        import pefile
-        wheels = sorted(pathlib.Path("wheelhouse").glob("pyhesaff*.whl"))
-        for wheel in wheels:
-            print("===", wheel.name, "===")
-            with zipfile.ZipFile(wheel) as zf:
-                dll_name = "pyhesaff/hesaff.dll"
-                if dll_name not in zf.namelist():
-                    print("hesaff.dll not found in wheel")
-                    continue
-                dll_bytes = zf.read(dll_name)
-            temp_path = pathlib.Path("hesaff_temp.dll")
-            temp_path.write_bytes(dll_bytes)
-            pe = pefile.PE(str(temp_path))
-            imports = []
-            for entry in getattr(pe, "DIRECTORY_ENTRY_IMPORT", []):
-                imports.append(entry.dll.decode("utf-8"))
-            pe.close()
-            temp_path.unlink(missing_ok=True)
-            print("Imports:", sorted(imports))
-            vcpkg_bin = pathlib.Path("C:/vcpkg/installed/x64-windows/bin")
-            if vcpkg_bin.exists():
-                present = [name for name in imports if (vcpkg_bin / name).exists()]
-                missing = [name for name in imports if (vcpkg_bin / name).exists() is False]
-                print("Imports present in vcpkg bin:", present)
-                print("Imports missing in vcpkg bin:", missing)
-        PY
     - name: Install wheel ${{ matrix.install-extras }}
       shell: bash
       env:
@@ -295,28 +201,22 @@ jobs:
         echo "Installing helpers: setuptools"
         python -m uv pip install setuptools>=0.8 setuptools_scm wheel build -U
         echo "Installing helpers: tomli and pkginfo"
-        python -m uv pip install tomli pkginfo packaging
+        python -m uv pip install tomli pkginfo
         export WHEEL_FPATH=$(python -c "if 1:
             import pathlib
-            from packaging import tags
-            from packaging.utils import parse_wheel_filename
             dist_dpath = pathlib.Path('wheelhouse')
-            candidates = sorted(dist_dpath.glob('pyhesaff*.whl'))
-            if not candidates:
-                raise SystemExit('No wheels found in wheelhouse')
-            sys_tags = set(tags.sys_tags())
-            def is_compatible(path):
-                _, _, _, wheel_tags = parse_wheel_filename(path.name)
-                return any(tag in sys_tags for tag in wheel_tags)
-            compatible = [path for path in candidates if is_compatible(path)]
-            fpath = sorted(compatible or candidates)[-1]
+            candidates = list(dist_dpath.glob('pyhesaff*.whl'))
+            candidates += list(dist_dpath.glob('pyhesaff*.tar.gz'))
+            fpath = sorted(candidates)[-1]
             print(str(fpath).replace(chr(92), chr(47)))
         ")
         export MOD_VERSION=$(python -c "if 1:
-            from packaging.utils import parse_wheel_filename
+            from pkginfo import Wheel, SDist
+            import pathlib
             fpath = '$WHEEL_FPATH'
-            _, version, _, _ = parse_wheel_filename(fpath.split('/')[-1])
-            print(version)
+            cls = Wheel if fpath.endswith('.whl') else SDist
+            item = cls(fpath)
+            print(item.version)
         ")
         echo "WHEEL_FPATH=$WHEEL_FPATH"
         echo "INSTALL_EXTRAS=$INSTALL_EXTRAS"
@@ -324,40 +224,6 @@ jobs:
         echo "MOD_VERSION=$MOD_VERSION"
         python -m uv pip install --prerelease=allow "pyhesaff[$INSTALL_EXTRAS]==$MOD_VERSION" -f wheelhouse
         echo "Install finished."
-    - name: Windows wheel diagnostics
-      if: runner.os == 'Windows'
-      shell: bash
-      run: |-
-        python - <<'PY'
-        import os
-        import sys
-        import site
-        print("site.getsitepackages():", site.getsitepackages())
-        try:
-            import pyhesaff
-            print("pyhesaff imported from:", pyhesaff.__file__)
-        except Exception as exc:
-            print("pyhesaff import failed:", repr(exc))
-        for sp in site.getsitepackages():
-            pkg_dir = os.path.join(sp, "pyhesaff")
-            if os.path.isdir(pkg_dir):
-                print("Contents of", pkg_dir)
-                for name in sorted(os.listdir(pkg_dir)):
-                    print(" -", name)
-        PY
-    - name: Windows smoke test
-      if: runner.os == 'Windows'
-      shell: bash
-      run: |-
-        python - <<'PY'
-        import os
-        import sys
-        repo_dir = os.path.abspath(os.getcwd())
-        sys.path = [path for path in sys.path if os.path.abspath(path) != repo_dir]
-        import pyhesaff
-        print("pyhesaff imported from:", pyhesaff.__file__)
-        print("cpp_version:", pyhesaff.get_cpp_version())
-        PY
     - name: Test wheel ${{ matrix.install-extras }}
       shell: bash
       env:

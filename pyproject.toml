@@ -61,7 +61,7 @@ yum -y install opencv-devel
 #[tool.cibuildwheel.windows]
 [tool.cibuildwheel.windows]
 before-all = "vcpkg install opencv4:x64-windows"
-repair-wheel-command = "python -m pip install delvewheel && python -m delvewheel repair --add-path C:\\\\vcpkg\\\\installed\\\\x64-windows\\\\bin --include opencv_core4.dll --include opencv_imgproc4.dll --include opencv_imgcodecs4.dll -w {dest_dir} {wheel}"
+repair-wheel-command = "python -m pip install delvewheel && python -m delvewheel repair --add-path C:\\\\vcpkg\\\\installed\\\\x64-windows\\\\bin --include C:\\\\vcpkg\\\\installed\\\\x64-windows\\\\bin\\\\opencv_core4.dll --include C:\\\\vcpkg\\\\installed\\\\x64-windows\\\\bin\\\\opencv_imgproc4.dll --include C:\\\\vcpkg\\\\installed\\\\x64-windows\\\\bin\\\\opencv_imgcodecs4.dll -w {dest_dir} {wheel}"
 
 #[tool.cibuildwheel.macos]
 #before-all = "brew install lz4"
