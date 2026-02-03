@@ -27,7 +27,7 @@ description = "Routines for computation of hessian affine keypoints in images."
 #]
 
 [tool.cibuildwheel]
-build = "cp39-* cp310-* cp311-* cp312-* cp313-* cp314-*"
+build = "cp39-*"
 build-frontend = "build"
 skip = "pp* *-musllinux_*"
 build-verbosity = 1
