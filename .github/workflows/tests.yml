@@ -234,6 +234,20 @@ jobs:
                 for name in sorted(members):
                     print(name)
         PY
+    - name: Show wheel DLL dependencies (Windows)
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |-
+        python -m pip install delvewheel
+        python - <<'PY'
+        import pathlib
+        import subprocess
+        import sys
+        wheels = sorted(pathlib.Path("wheelhouse").glob("pyhesaff*.whl"))
+        for wheel in wheels:
+            print("===", wheel.name, "===")
+            subprocess.run([sys.executable, "-m", "delvewheel", "show", str(wheel)], check=False)
+        PY
     - name: Install wheel ${{ matrix.install-extras }}
       shell: bash
       env:
