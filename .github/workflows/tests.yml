@@ -258,6 +258,27 @@ jobs:
         echo "MOD_VERSION=$MOD_VERSION"
         python -m uv pip install --prerelease=allow "pyhesaff[$INSTALL_EXTRAS]==$MOD_VERSION" -f wheelhouse
         echo "Install finished."
+    - name: Windows wheel diagnostics
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |-
+        python - <<'PY'
+        import os
+        import sys
+        import site
+        print("site.getsitepackages():", site.getsitepackages())
+        try:
+            import pyhesaff
+            print("pyhesaff imported from:", pyhesaff.__file__)
+        except Exception as exc:
+            print("pyhesaff import failed:", repr(exc))
+        for sp in site.getsitepackages():
+            pkg_dir = os.path.join(sp, "pyhesaff")
+            if os.path.isdir(pkg_dir):
+                print("Contents of", pkg_dir)
+                for name in sorted(os.listdir(pkg_dir)):
+                    print(" -", name)
+        PY
     - name: Windows smoke test
       if: runner.os == 'Windows'
       shell: bash
