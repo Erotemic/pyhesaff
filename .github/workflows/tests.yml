@@ -240,7 +240,7 @@ jobs:
                 raise SystemExit('No wheels found in wheelhouse')
             sys_tags = set(tags.sys_tags())
             def is_compatible(path):
-                _, _, wheel_tags = parse_wheel_filename(path.name)
+                _, _, _, wheel_tags = parse_wheel_filename(path.name)
                 return any(tag in sys_tags for tag in wheel_tags)
             compatible = [path for path in candidates if is_compatible(path)]
             fpath = sorted(compatible or candidates)[-1]
