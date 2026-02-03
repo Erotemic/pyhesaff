@@ -217,6 +217,23 @@ jobs:
         pattern: wheels-*
         merge-multiple: true
         path: wheelhouse
+    - name: Inspect wheel contents (Windows)
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |-
+        python - <<'PY'
+        import pathlib
+        import zipfile
+        dist_dpath = pathlib.Path("wheelhouse")
+        wheels = sorted(dist_dpath.glob("pyhesaff*.whl"))
+        print("Found wheels:", [w.name for w in wheels])
+        for wheel in wheels:
+            print("===", wheel.name, "===")
+            with zipfile.ZipFile(wheel) as zf:
+                members = [m for m in zf.namelist() if "pyhesaff/" in m]
+                for name in sorted(members):
+                    print(name)
+        PY
     - name: Install wheel ${{ matrix.install-extras }}
       shell: bash
       env:

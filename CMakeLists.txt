@@ -195,6 +195,9 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     # Set the DLLEXPORT variable to export symbols
     target_compile_definitions(hesaff PRIVATE HESAFF_WIN_EXPORT)
 endif()
+if(WIN32)
+    set_target_properties(hesaff PROPERTIES PREFIX "" OUTPUT_NAME "hesaff" SUFFIX ".dll")
+endif()
 
 
 
@@ -219,6 +222,9 @@ install(
   LIBRARY DESTINATION "pyhesaff"
   ARCHIVE DESTINATION "pyhesaff"
 )
+if(WIN32)
+  install(FILES $<TARGET_FILE:hesaff> DESTINATION "pyhesaff")
+endif()
 
 #message(STATUS CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE})
 
