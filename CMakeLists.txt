@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.13.0)
+if(POLICY CMP0087)
+  cmake_policy(SET CMP0087 NEW)
+endif()
 
 
 #######################################
@@ -57,6 +60,75 @@ endif()
 # OpenCV_ROOT_DIR=$HOME/.local
 # OpenCV_ROOT_DIR=$HOME/.local python setup.py develop
 #set(OpenCV_FIND_REQUIRED_COMPONENTS)
+if(DEFINED ENV{OpenCV_DIR} AND NOT OpenCV_DIR)
+  set(OpenCV_DIR "$ENV{OpenCV_DIR}")
+endif()
+if(DEFINED ENV{OpenCV_ROOT} AND NOT OpenCV_ROOT)
+  set(OpenCV_ROOT "$ENV{OpenCV_ROOT}")
+endif()
+if(DEFINED ENV{OpenCV_ROOT_DIR} AND NOT OpenCV_ROOT_DIR)
+  set(OpenCV_ROOT_DIR "$ENV{OpenCV_ROOT_DIR}")
+endif()
+if(DEFINED ENV{VCPKG_ROOT} AND NOT OpenCV_DIR)
+  if(DEFINED ENV{VCPKG_TARGET_TRIPLET})
+    set(_vcpkg_triplet "$ENV{VCPKG_TARGET_TRIPLET}")
+  elseif(WIN32)
+    set(_vcpkg_triplet "x64-windows")
+  endif()
+  if(_vcpkg_triplet)
+    set(_vcpkg_opencv_dir "$ENV{VCPKG_ROOT}/installed/${_vcpkg_triplet}/share/opencv4")
+    set(OpenCV_DIR "${_vcpkg_opencv_dir}")
+    if(NOT OpenCV_ROOT)
+      set(OpenCV_ROOT "$ENV{VCPKG_ROOT}/installed/${_vcpkg_triplet}")
+    endif()
+  endif()
+endif()
+if(OpenCV_ROOT AND NOT CMAKE_PREFIX_PATH)
+  set(CMAKE_PREFIX_PATH "${OpenCV_ROOT}")
+endif()
+message(STATUS "OpenCV_DIR (cache/env) = ${OpenCV_DIR}")
+message(STATUS "OpenCV_ROOT (cache/env) = ${OpenCV_ROOT}")
+message(STATUS "OpenCV_ROOT_DIR (cache/env) = ${OpenCV_ROOT_DIR}")
+message(STATUS "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}")
+message(STATUS "Derived VCPKG triplet = ${_vcpkg_triplet}")
+message(STATUS "ENV{OpenCV_DIR} = $ENV{OpenCV_DIR}")
+message(STATUS "ENV{OpenCV_ROOT} = $ENV{OpenCV_ROOT}")
+message(STATUS "ENV{OpenCV_ROOT_DIR} = $ENV{OpenCV_ROOT_DIR}")
+message(STATUS "ENV{VCPKG_ROOT} = $ENV{VCPKG_ROOT}")
+message(STATUS "ENV{VCPKG_TARGET_TRIPLET} = $ENV{VCPKG_TARGET_TRIPLET}")
+message(STATUS "ENV{VCPKG_INSTALLED_DIR} = $ENV{VCPKG_INSTALLED_DIR}")
+message(STATUS "ENV{CMAKE_PREFIX_PATH} = $ENV{CMAKE_PREFIX_PATH}")
+message(STATUS "ENV{PATH} = $ENV{PATH}")
+message(STATUS "CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
+set(_opencv_probe_dirs
+    "${OpenCV_DIR}"
+    "$ENV{OpenCV_DIR}"
+    "${OpenCV_ROOT}"
+    "$ENV{OpenCV_ROOT}"
+    "${OpenCV_ROOT_DIR}"
+    "$ENV{OpenCV_ROOT_DIR}"
+    "$ENV{VCPKG_ROOT}/installed/$ENV{VCPKG_TARGET_TRIPLET}/share/opencv4"
+    "$ENV{VCPKG_ROOT}/installed/x64-windows/share/opencv4"
+)
+foreach(_opencv_probe_dir IN LISTS _opencv_probe_dirs)
+  if(_opencv_probe_dir)
+    message(STATUS "OpenCV probe dir: ${_opencv_probe_dir}")
+    if(EXISTS "${_opencv_probe_dir}")
+      file(GLOB _opencv_probe_entries "${_opencv_probe_dir}/*")
+      list(LENGTH _opencv_probe_entries _opencv_probe_count)
+      message(STATUS "  exists with ${_opencv_probe_count} entries")
+      if(EXISTS "${_opencv_probe_dir}/OpenCVConfig.cmake")
+        message(STATUS "  OpenCVConfig.cmake found")
+      elseif(EXISTS "${_opencv_probe_dir}/opencv-config.cmake")
+        message(STATUS "  opencv-config.cmake found")
+      else()
+        message(STATUS "  OpenCV config file not found in probe dir")
+      endif()
+    else()
+      message(STATUS "  does not exist")
+    endif()
+  endif()
+endforeach()
 find_package( OpenCV REQUIRED )
 IF(OpenCV_FOUND)
   message(STATUS "Found OpenCV! ^_^")
@@ -69,6 +141,11 @@ IF(OpenCV_FOUND)
 
   # HACK ON CENTOS
   include_directories(/usr/local/include)
+
+  set(_opencv_includes "${OpenCV_INCLUDE_DIRS}")
+  if(NOT _opencv_includes)
+    set(_opencv_includes "${OpenCV_INCLUDE_DIR}")
+  endif()
 ELSE()
   message(FATAL_ERROR "Missing OpenCV! x.x")
 ENDIF()
@@ -121,10 +198,13 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     # Set the DLLEXPORT variable to export symbols
     target_compile_definitions(hesaff PRIVATE HESAFF_WIN_EXPORT)
 endif()
+if(WIN32)
+    set_target_properties(hesaff PROPERTIES PREFIX "" OUTPUT_NAME "hesaff" SUFFIX ".dll")
+endif()
 
 
 
-target_include_directories(hesaff PRIVATE ${OpenCV_INCLUDE_DIR})
+target_include_directories(hesaff PRIVATE ${_opencv_includes})
 
 #######################################
 target_link_libraries(hesaff PRIVATE ${OpenCV_LIBRARIES})
@@ -139,7 +219,47 @@ target_link_libraries(hesaff PRIVATE ${OpenCV_LIBRARIES})
 # https://github.com/scikit-build/scikit-build/issues/434
 # Note: if the target is not referenced by package_data in setup.py then the
 # lib will be installed as a data file and not a package file.
-install(TARGETS hesaff LIBRARY DESTINATION "pyhesaff")
+install(
+  TARGETS hesaff
+  RUNTIME DESTINATION "pyhesaff"
+  LIBRARY DESTINATION "pyhesaff"
+  ARCHIVE DESTINATION "pyhesaff"
+)
+if(WIN32)
+  install(FILES $<TARGET_FILE:hesaff> DESTINATION "pyhesaff")
+  install(CODE [[
+    set(_hesaff_file "$<TARGET_FILE:hesaff>")
+    message(STATUS "hesaff target file (install-time) = '${_hesaff_file}'")
+    file(GET_RUNTIME_DEPENDENCIES
+      LIBRARIES "${_hesaff_file}"
+      RESOLVED_DEPENDENCIES_VAR _hesaff_runtime_deps
+      UNRESOLVED_DEPENDENCIES_VAR _hesaff_runtime_unresolved
+      DIRECTORIES
+        "$ENV{VCPKG_ROOT}/installed/$ENV{VCPKG_TARGET_TRIPLET}/bin"
+        "$ENV{VCPKG_ROOT}/installed/x64-windows/bin"
+        "$ENV{OpenCV_ROOT}/bin"
+      PRE_EXCLUDE_REGEXES
+        "api-ms-win-.*"
+        "ext-ms-win-.*"
+      POST_EXCLUDE_REGEXES
+        ".*[/\\\\](kernel32|user32|gdi32|advapi32|ws2_32|shell32|ole32|oleaut32|bcrypt|crypt32|secur32|rpcrt4|msvcp.*|vcruntime.*|ucrtbase)\\.dll"
+    )
+    message(STATUS "Resolved deps: ${_hesaff_runtime_deps}")
+    message(STATUS "Unresolved deps: ${_hesaff_runtime_unresolved}")
+    if(_hesaff_runtime_unresolved)
+      message(WARNING "Unresolved hesaff runtime dependencies: ${_hesaff_runtime_unresolved}")
+    endif()
+    foreach(_hesaff_dep IN LISTS _hesaff_runtime_deps)
+      if(EXISTS "${_hesaff_dep}")
+        file(INSTALL
+          DESTINATION "${CMAKE_INSTALL_PREFIX}/pyhesaff"
+          TYPE FILE
+          FILES "${_hesaff_dep}"
+        )
+      endif()
+    endforeach()
+  ]])
+endif()
 
 #message(STATUS CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE})
 
