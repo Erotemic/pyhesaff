@@ -187,11 +187,11 @@ jobs:
         # for testing instead of using the more concise matrix notation.
         include:
         - python-version: '3.9'
-          install-extras: tests-strict,runtime-strict,headless-strict
+          install-extras: tests,runtime,headless
           os: ubuntu-latest
           arch: auto
         - python-version: '3.13'
-          install-extras: tests-strict,runtime-strict,optional-strict,headless-strict
+          install-extras: tests,runtime,optional,headless
           os: ubuntu-latest
           arch: auto
         - python-version: '3.9'
