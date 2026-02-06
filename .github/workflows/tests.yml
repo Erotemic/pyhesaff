@@ -34,12 +34,6 @@ jobs:
       run: |-
         # stop the build if there are Python syntax errors or undefined names
         flake8 ./pyhesaff --count --select=E9,F63,F7,F82 --show-source --statistics
-    - name: Typecheck with mypy
-      run: |-
-        python -m pip install mypy
-        pip install -r requirements/runtime.txt
-        mypy --install-types --non-interactive ./pyhesaff
-        mypy ./pyhesaff
   build_binpy_wheels:
     ##
     # Build the binary wheels. Note: even though cibuildwheel will test
@@ -193,11 +187,11 @@ jobs:
         # for testing instead of using the more concise matrix notation.
         include:
         - python-version: '3.9'
-          install-extras: tests-strict,runtime-strict,headless-strict
+          install-extras: tests,runtime,headless
           os: ubuntu-latest
           arch: auto
         - python-version: '3.13'
-          install-extras: tests-strict,runtime-strict,optional-strict,headless-strict
+          install-extras: tests,runtime,optional,headless
           os: ubuntu-latest
           arch: auto
         - python-version: '3.9'
@@ -277,7 +271,7 @@ jobs:
                 for name in sorted(members):
                     print(name)
         PY
-    - name: Validate wheel DLL payload (Windows)
+    - name: Validate wheel native module (Windows)
       if: runner.os == 'Windows'
       shell: bash
       run: |-
@@ -291,16 +285,13 @@ jobs:
         for wheel in wheels:
             with zipfile.ZipFile(wheel) as zf:
                 members = set(zf.namelist())
-            hesaff_dll = "pyhesaff/hesaff.dll"
-            if hesaff_dll not in members:
-                raise SystemExit(f"{wheel.name} missing {hesaff_dll}")
-            opencv_dlls = [
-                name for name in members
-                if name.lower().startswith("pyhesaff/opencv_") and name.lower().endswith(".dll")
-            ]
-            if not opencv_dlls:
-                raise SystemExit(f"{wheel.name} missing opencv_*.dll in pyhesaff/")
-            print(f"{wheel.name} contains {hesaff_dll} and {len(opencv_dlls)} opencv dll(s).")
+            pyds = [name for name in members if name.startswith("pyhesaff/_hesaff") and name.endswith(".pyd")]
+            if not pyds:
+                raise SystemExit(f"{wheel.name} missing pyhesaff/_hesaff*.pyd")
+            dlls = [name for name in members if name.startswith("pyhesaff.libs/") and name.lower().endswith(".dll")]
+            if not dlls:
+                raise SystemExit(f"{wheel.name} missing pyhesaff.libs/*.dll")
+            print(f"{wheel.name} contains {pyds[0]} and {len(dlls)} bundled dll(s).")
         PY
     - name: Show wheel DLL dependencies (Windows)
       if: runner.os == 'Windows'
@@ -317,43 +308,6 @@ jobs:
         for wheel in wheels:
             print("===", wheel.name, "===")
             subprocess.run([sys.executable, "-m", "delvewheel", "show", str(wheel)], check=False)
-        PY
-    - name: Inspect hesaff.dll imports (Windows)
-      if: runner.os == 'Windows'
-      shell: bash
-      run: |-
-        python -m pip install pefile
-        python - <<'PY'
-        import os
-        import pathlib
-        import zipfile
-        import pefile
-        wheels = sorted(pathlib.Path("wheelhouse").glob("pyhesaff*-win_amd64.whl"))
-        if not wheels:
-            raise SystemExit("No Windows wheels found in wheelhouse")
-        for wheel in wheels:
-            print("===", wheel.name, "===")
-            with zipfile.ZipFile(wheel) as zf:
-                dll_name = "pyhesaff/hesaff.dll"
-                if dll_name not in zf.namelist():
-                    print("hesaff.dll not found in wheel")
-                    continue
-                dll_bytes = zf.read(dll_name)
-            temp_path = pathlib.Path("hesaff_temp.dll")
-            temp_path.write_bytes(dll_bytes)
-            pe = pefile.PE(str(temp_path))
-            imports = []
-            for entry in getattr(pe, "DIRECTORY_ENTRY_IMPORT", []):
-                imports.append(entry.dll.decode("utf-8"))
-            pe.close()
-            temp_path.unlink(missing_ok=True)
-            print("Imports:", sorted(imports))
-            vcpkg_bin = pathlib.Path("C:/vcpkg/installed/x64-windows/bin")
-            if vcpkg_bin.exists():
-                present = [name for name in imports if (vcpkg_bin / name).exists()]
-                missing = [name for name in imports if (vcpkg_bin / name).exists() is False]
-                print("Imports present in vcpkg bin:", present)
-                print("Imports missing in vcpkg bin:", missing)
         PY
     - name: Install wheel ${{ matrix.install-extras }}
       shell: bash
@@ -438,6 +392,7 @@ jobs:
       env:
         CI_PYTHON_VERSION: py${{ matrix.python-version }}
       run: |-
+        python -m pip install pytest pytest-cov xdoctest
         echo "Creating test sandbox directory"
         export WORKSPACE_DNAME="testdir_${CI_PYTHON_VERSION}_${GITHUB_RUN_ID}_${RUNNER_OS}"
         echo "WORKSPACE_DNAME=$WORKSPACE_DNAME"

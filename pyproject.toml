@@ -1,8 +1,81 @@
 [build-system]
-requires = [ "setuptools>=41.0.1", "wheel", "scikit-build>=0.9.0", "numpy", "ninja", "build"]
+requires = [ "scikit-build-core>=0.9.0", "setuptools>=41.0.1", "pybind11", "numpy", "build" ]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "pyhesaff"
+version = "2.2.0"
+description = "Routines for computation of hessian affine keypoints in images."
+readme = "README.rst"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy>=2.1.0; python_version >= '3.13'",
+    "numpy>=1.26.0; python_version >= '3.12' and python_version < '3.13'",
+    "numpy>=1.23.2; python_version >= '3.11' and python_version < '3.12'",
+    "numpy>=1.21.6; python_version >= '3.10' and python_version < '3.11'",
+    "numpy>=1.19.3; python_version >= '3.9' and python_version < '3.10'",
+    "ubelt>=1.3.4",
+]
+authors = [
+    { name = "Krystian Mikolajczyk" },
+    { name = "Michal Perdoch" },
+    { name = "Jon Crall", email = "erotemic@gmail.com" },
+    { name = "Avi Weinstock" },
+]
+license = { text = "Apache 2" }
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+
+[project.optional-dependencies]
+nanobind = ["nanobind>=2.0.0"]
+runtime = [
+    "numpy>=2.1.0; python_version >= '3.13'",
+    "numpy>=1.26.0; python_version >= '3.12' and python_version < '3.13'",
+    "numpy>=1.23.2; python_version >= '3.11' and python_version < '3.12'",
+    "numpy>=1.21.6; python_version >= '3.10' and python_version < '3.11'",
+    "numpy>=1.19.3; python_version >= '3.9' and python_version < '3.10'",
+    "ubelt>=1.3.4",
+]
+tests = [
+    "utool>=2.2.1",
+    "xdoctest>=1.1.5",
+    "pytest>=8.1.1; python_version >= '3.11'",
+    "pytest>=6.2.5; python_version < '3.11'",
+    "pytest-cov>=3.0.0",
+    "pytest_timeout>=2.3.1; python_version >= '3.12'",
+    "pytest_timeout>=1.4.2; python_version < '3.12'",
+    "coverage>=7.3.0; python_version >= '3.12'",
+    "coverage>=6.1.1; python_version >= '3.10' and python_version < '3.12'",
+    "coverage>=5.3.1; python_version < '3.10'",
+    "requests>=2.27.1",
+]
+headless = [
+    "opencv-python-headless>=4.10.0.84; python_version >= '3.13'",
+    "opencv-python-headless>=4.5.5.64; python_version >= '3.11' and python_version < '3.13'",
+    "opencv-python-headless>=4.5.4.58; python_version >= '3.10' and python_version < '3.11'",
+    "opencv-python-headless>=3.4.15.55; python_version >= '3.9' and python_version < '3.10'",
+]
+graphics = [
+    "opencv-python>=4.10.0.84; python_version >= '3.13'",
+    "opencv-python>=4.5.5.64; python_version >= '3.11' and python_version < '3.13'",
+    "opencv-python>=4.5.4.58; python_version >= '3.10' and python_version < '3.11'",
+    "opencv-python>=3.4.15.55; python_version >= '3.9' and python_version < '3.10'",
+]
+optional = []
 
 [tool.mypy]
 ignore_missing_imports = true
+exclude = ".*"
 
 [tool.xcookie]
 tags = [ "github", "cv2", "erotemic", "binpy", "nosrcdist"]
@@ -61,6 +134,7 @@ yum -y install opencv-devel
 #[tool.cibuildwheel.windows]
 [tool.cibuildwheel.windows]
 before-all = "vcpkg install opencv4:x64-windows"
+repair-wheel-command = "python -m pip install delvewheel && python -m delvewheel repair -w {dest_dir} --add-path C:/vcpkg/installed/x64-windows/bin {wheel}"
 
 #[tool.cibuildwheel.macos]
 #before-all = "brew install lz4"

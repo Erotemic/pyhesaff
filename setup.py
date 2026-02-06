@@ -246,57 +246,11 @@ if __name__ == "__main__":
         "requirements/runtime.txt", versions="loose"
     )
 
-    import sysconfig
-    import os
-    import sys
-    class EmptyListWithLength(list):
-        def __len__(self):
-            return 1
-
-    try:
-        soconfig = sysconfig.get_config_var('EXT_SUFFIX')
-    except Exception:
-        soconfig = sysconfig.get_config_var('SO')
-
-    def get_lib_ext():
-        if sys.platform.startswith('win32'):
-            ext = '.dll'
-        elif sys.platform.startswith('darwin'):
-            ext = '.dylib'
-        elif sys.platform.startswith('linux'):
-            ext = '.so'
-        else:
-            raise Exception('Unknown operating system: %s' % sys.platform)
-        return ext
-
-    libext = get_lib_ext()
-
-    if True:
-        # _os = 'linux'
-        # assert _os == 'linux'
-        # _arch = 'x86_64'
-        # _pyver = '3.6'
-        _pyver = '{}.{}'.format(sys.version_info.major, sys.version_info.minor)
-        hack_libconfig = '-{}{}'.format(_pyver, libext)
-        # hack_libconfig = '.{}-{}-{}.so'.format(_os, _arch, _pyver)
-        # hack_libconfig = '.so'
-        # print('hack_libconfig = {!r}'.format(hack_libconfig))
-
-    # import ubelt as ub
-    # ub.cmd('pwd', verbose=3)
-    # ub.cmd('ls -al', verbose=3)
-    # ub.cmd('ls dist', verbose=3)
-    # ub.cmd('ls -al pyhesaff', verbose=3)
-
-    pyhesaff_package_data = (
-            ['*%s' % soconfig] +
-            ['*%s' % hack_libconfig] +
-            ['*%s' % libext] +
-            # ['*.so'] +
-            (['*.dll'] if os.name == 'nt' else []) +
-            (['Release\\*.dll'] if os.name == 'nt' else []) +
-            ["LICENSE.txt", "LICENSE-3RD-PARTY.txt", "LICENSE.SIFT"]
-    )
+    pyhesaff_package_data = [
+        "LICENSE.txt",
+        "LICENSE-3RD-PARTY.txt",
+        "LICENSE.SIFT",
+    ]
 
     setupkw["extras_require"] = {
         "all": parse_requirements("requirements.txt", versions="loose"),
@@ -338,7 +292,6 @@ if __name__ == "__main__":
     setupkw["license"] = "Apache 2"
     setupkw["packages"] = find_packages(".")
     setupkw["python_requires"] = ">=3.9"
-    setupkw['ext_modules'] = EmptyListWithLength()  # hack for including ctypes bins
     setupkw["classifiers"] = [
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",

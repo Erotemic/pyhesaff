@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13.0)
+cmake_minimum_required(VERSION 3.15.0)
 if(POLICY CMP0087)
   cmake_policy(SET CMP0087 NEW)
 endif()
@@ -129,7 +129,7 @@ foreach(_opencv_probe_dir IN LISTS _opencv_probe_dirs)
     endif()
   endif()
 endforeach()
-find_package( OpenCV REQUIRED )
+find_package(OpenCV REQUIRED)
 IF(OpenCV_FOUND)
   message(STATUS "Found OpenCV! ^_^")
   message(STATUS "OpenCV_FOUND = ${OpenCV_FOUND}")
@@ -173,92 +173,60 @@ IF(ENABLE_GPROF)
 ENDIF()
 
 #######################################
-set(SOURCE_FILES
+set(HESAFF_CORE_SOURCES
     src/hesaff.cpp
     src/pyramid.cpp
     src/helpers.cpp
     src/affine.cpp
     src/orientation.cpp
-    #src/python_bindings.cpp
     src/siftdesc.cpp)
 
+find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
+option(USE_NANOBIND "Use nanobind bindings when available" ON)
+find_package(nanobind CONFIG QUIET)
+if(NOT nanobind_FOUND)
+  find_package(pybind11 CONFIG REQUIRED)
+endif()
 
 message(STATUS "OpenMP_SHARED_LINKER_FLAGS = ${OpenMP_SHARED_LINKER_FLAGS}")
 message(STATUS "OpenMP_EXE_LINKER_FLAGS = ${OpenMP_EXE_LINKER_FLAGS}")
 message(STATUS "OpenCV_INCLUDE_DIR = ${OpenCV_INCLUDE_DIR}")
 message(STATUS "OpenCV_LIBRARIES = ${OpenCV_LIBRARIES}")
 
-# Use MODULE instead of SHARED for windows
-#add_library(hesaff SHARED ${SOURCE_FILES})
-add_library(hesaff MODULE ${SOURCE_FILES})
-
+if(nanobind_FOUND AND USE_NANOBIND)
+  message(STATUS "Using nanobind for _hesaff")
+  nanobind_add_module(_hesaff MODULE
+      src/nanobind_hesaff.cpp
+      ${HESAFF_CORE_SOURCES}
+  )
+else()
+  message(STATUS "Using pybind11 for _hesaff")
+  pybind11_add_module(_hesaff MODULE
+      src/pybind_hesaff.cpp
+      ${HESAFF_CORE_SOURCES}
+  )
+endif()
 
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-    # Set the DLLEXPORT variable to export symbols
-    target_compile_definitions(hesaff PRIVATE HESAFF_WIN_EXPORT)
-endif()
 if(WIN32)
-    set_target_properties(hesaff PROPERTIES PREFIX "" OUTPUT_NAME "hesaff" SUFFIX ".dll")
+    target_compile_definitions(_hesaff PRIVATE HESAFF_WIN_EXPORT)
 endif()
 
+target_include_directories(_hesaff PRIVATE ${_opencv_includes} "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(_hesaff PRIVATE ${OpenCV_LIBRARIES})
 
-
-target_include_directories(hesaff PRIVATE ${_opencv_includes})
-
-#######################################
-target_link_libraries(hesaff PRIVATE ${OpenCV_LIBRARIES})
-
-#file(RELATIVE_PATH _install_dest "${CMAKE_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
-#message(STATUS "CMAKE_CURRENT_SOURCE_DIR = ${CMAKE_CURRENT_SOURCE_DIR}")
-#message(STATUS "CMAKE_SOURCE_DIR = ${CMAKE_SOURCE_DIR}")
-#message(STATUS "_install_dest = ${_install_dest}")
-#install(TARGETS hesaff LIBRARY DESTINATION "${_install_dest}")
-
-# I think: An install target is required so scikit-build knows where the binaries are
-# https://github.com/scikit-build/scikit-build/issues/434
-# Note: if the target is not referenced by package_data in setup.py then the
-# lib will be installed as a data file and not a package file.
 install(
-  TARGETS hesaff
+  TARGETS _hesaff
   RUNTIME DESTINATION "pyhesaff"
   LIBRARY DESTINATION "pyhesaff"
   ARCHIVE DESTINATION "pyhesaff"
 )
-if(WIN32)
-  install(FILES $<TARGET_FILE:hesaff> DESTINATION "pyhesaff")
-  install(CODE [[
-    set(_hesaff_file "$<TARGET_FILE:hesaff>")
-    message(STATUS "hesaff target file (install-time) = '${_hesaff_file}'")
-    file(GET_RUNTIME_DEPENDENCIES
-      LIBRARIES "${_hesaff_file}"
-      RESOLVED_DEPENDENCIES_VAR _hesaff_runtime_deps
-      UNRESOLVED_DEPENDENCIES_VAR _hesaff_runtime_unresolved
-      DIRECTORIES
-        "$ENV{VCPKG_ROOT}/installed/$ENV{VCPKG_TARGET_TRIPLET}/bin"
-        "$ENV{VCPKG_ROOT}/installed/x64-windows/bin"
-        "$ENV{OpenCV_ROOT}/bin"
-      PRE_EXCLUDE_REGEXES
-        "api-ms-win-.*"
-        "ext-ms-win-.*"
-      POST_EXCLUDE_REGEXES
-        ".*[/\\\\](kernel32|user32|gdi32|advapi32|ws2_32|shell32|ole32|oleaut32|bcrypt|crypt32|secur32|rpcrt4|msvcp.*|vcruntime.*|ucrtbase)\\.dll"
-    )
-    message(STATUS "Resolved deps: ${_hesaff_runtime_deps}")
-    message(STATUS "Unresolved deps: ${_hesaff_runtime_unresolved}")
-    if(_hesaff_runtime_unresolved)
-      message(WARNING "Unresolved hesaff runtime dependencies: ${_hesaff_runtime_unresolved}")
-    endif()
-    foreach(_hesaff_dep IN LISTS _hesaff_runtime_deps)
-      if(EXISTS "${_hesaff_dep}")
-        file(INSTALL
-          DESTINATION "${CMAKE_INSTALL_PREFIX}/pyhesaff"
-          TYPE FILE
-          FILES "${_hesaff_dep}"
-        )
-      endif()
-    endforeach()
-  ]])
+
+option(BUILD_HESAFF_CLI "Build hesaff command line tool" OFF)
+if(BUILD_HESAFF_CLI)
+  add_executable(hesaff_cli src/hesaff_cli.cpp ${HESAFF_CORE_SOURCES})
+  target_include_directories(hesaff_cli PRIVATE ${_opencv_includes} "${CMAKE_CURRENT_SOURCE_DIR}/src")
+  target_link_libraries(hesaff_cli PRIVATE ${OpenCV_LIBRARIES})
 endif()
 
 #message(STATUS CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE})
@@ -270,6 +238,6 @@ endif()
 #    COMMAND ctags -R --c++-kinds=+p --fields=+iaS --extra=+q .
 #    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR} )
 #add_executable(hesaff_tags tags)
-#add_executable(hesaffexe ${SOURCE_FILES})
+#add_executable(hesaffexe ${HESAFF_CORE_SOURCES})
 #target_include_directories(hesaffexe PRIVATE ${OpenCV_INCLUDE_DIR})
 #target_link_libraries(hesaffexe ${OpenCV_LIBRARIES})
