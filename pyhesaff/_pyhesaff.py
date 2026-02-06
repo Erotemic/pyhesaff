@@ -7,14 +7,10 @@ Command Line:
     python -m pyhesaff detect_feats --show
     python -m pyhesaff detect_feats --show --siftPower=0.5,
 """
-import ctypes
 import numpy as np
 import ubelt as ub
-from os.path import realpath, dirname
 from collections import OrderedDict
-from pyhesaff import ctypes_interface
-from typing import Literal
-from typing import Sequence
+from pyhesaff import _hesaff
 
 #============================
 # hesaff ctypes interface
@@ -25,76 +21,41 @@ kpts_dtype = np.float32
 vecs_dtype = np.uint8
 img_dtype  = np.uint8
 img32_dtype  = np.float32
-# scalar ctypes
-obj_t     = ctypes.c_void_p
-str_t     = ctypes.c_char_p
-int_t     = ctypes.c_int
-#else:
-#    raise NotImplementedError('PY3')
-#    int_t     = ctypes.c_long
-bool_t    = ctypes.c_bool
-float_t   = ctypes.c_float
-#byte_t    = ctypes.c_char
-# array ctypes
-
-
-AllowedFlag = Literal[
-    "C_CONTIGUOUS", "CONTIGUOUS", "C",
-    "F_CONTIGUOUS", "FORTRAN", "F",
-    "ALIGNED", "A",
-    "WRITEABLE", "W",
-    "OWNDATA", "O",
-    "WRITEBACKIFCOPY", "X",
-]
-
-FLAGS_RW: Sequence[AllowedFlag] = ['ALIGNED', 'C_CONTIGUOUS', 'WRITEABLE']
-FLAGS_RO: Sequence[AllowedFlag] = ['ALIGNED', 'C_CONTIGUOUS']
-#FLAGS_RW = 'aligned, writeable'
-kpts_t       = np.ctypeslib.ndpointer(dtype=kpts_dtype, ndim=2, flags=FLAGS_RW)
-vecs_t       = np.ctypeslib.ndpointer(dtype=vecs_dtype, ndim=2, flags=FLAGS_RW)
-img_t        = np.ctypeslib.ndpointer(dtype=img_dtype, ndim=3, flags=FLAGS_RO)
-img32_t      = np.ctypeslib.ndpointer(dtype=img32_dtype, ndim=3, flags=FLAGS_RO)
-kpts_array_t = np.ctypeslib.ndpointer(dtype=kpts_t, ndim=1, flags=FLAGS_RW)
-vecs_array_t = np.ctypeslib.ndpointer(dtype=vecs_t, ndim=1, flags=FLAGS_RW)
-int_array_t  = np.ctypeslib.ndpointer(dtype=int_t, ndim=1, flags=FLAGS_RW)
-str_list_t   = ctypes.POINTER(str_t)
-
 # THE ORDER OF THIS LIST IS IMPORTANT!
 HESAFF_TYPED_PARAMS = [
     # Pyramid Params
-    (int_t,   'numberOfScales', 3),           # number of scale per octave
-    (float_t, 'threshold', 16.0 / 3.0),       # noise dependent threshold on the response (sensitivity)
-    (float_t, 'edgeEigenValueRatio', 10.0),   # ratio of the eigenvalues
-    (int_t,   'border', 5),                   # number of pixels ignored at the border of image
-    (int_t,   'maxPyramidLevels', -1),        # maximum number of pyramid divisions. -1 is no limit
+    (int,   'numberOfScales', 3),           # number of scale per octave
+    (float, 'threshold', 16.0 / 3.0),       # noise dependent threshold on the response (sensitivity)
+    (float, 'edgeEigenValueRatio', 10.0),   # ratio of the eigenvalues
+    (int,   'border', 5),                   # number of pixels ignored at the border of image
+    (int,   'maxPyramidLevels', -1),        # maximum number of pyramid divisions. -1 is no limit
     # Affine Shape Params
-    (int_t,   'maxIterations', 16),           # number of affine shape interations
-    (float_t, 'convergenceThreshold', 0.05),  # maximum deviation from isotropic shape at convergence
-    (int_t,   'smmWindowSize', 19),           # width and height of the SMM (second moment matrix) mask
-    (float_t, 'mrSize', 3.0 * np.sqrt(3.0)),  # size of the measurement region (as multiple of the feature scale)
+    (int,   'maxIterations', 16),           # number of affine shape interations
+    (float, 'convergenceThreshold', 0.05),  # maximum deviation from isotropic shape at convergence
+    (int,   'smmWindowSize', 19),           # width and height of the SMM (second moment matrix) mask
+    (float, 'mrSize', 3.0 * np.sqrt(3.0)),  # size of the measurement region (as multiple of the feature scale)
     # SIFT params
-    (int_t,   'spatialBins', 4),
-    (int_t,   'orientationBins', 8),
-    (float_t, 'maxBinValue', 0.2),
+    (int,   'spatialBins', 4),
+    (int,   'orientationBins', 8),
+    (float, 'maxBinValue', 0.2),
     # Shared params
-    (float_t, 'initialSigma', 1.6),           # amount of smoothing applied to the initial level of first octave
-    (int_t,   'patchSize', 41),               # width and height of the patch
+    (float, 'initialSigma', 1.6),           # amount of smoothing applied to the initial level of first octave
+    (int,   'patchSize', 41),               # width and height of the patch
     # My params
-    (float_t, 'scale_min', -1.0),
-    (float_t, 'scale_max', -1.0),
-    (bool_t,  'rotation_invariance', False),
-    (bool_t,  'augment_orientation', False),
-    (float_t, 'ori_maxima_thresh', .8),
-    (bool_t,  'affine_invariance', True),
-    (bool_t,  'only_count', False),
+    (float, 'scale_min', -1.0),
+    (float, 'scale_max', -1.0),
+    (bool,  'rotation_invariance', False),
+    (bool,  'augment_orientation', False),
+    (float, 'ori_maxima_thresh', .8),
+    (bool,  'affine_invariance', True),
+    (bool,  'only_count', False),
     #
-    (bool_t,  'use_dense', False),
-    (int_t,   'dense_stride', 32),
-    (float_t, 'siftPower', 1.0),
+    (bool,  'use_dense', False),
+    (int,   'dense_stride', 32),
+    (float, 'siftPower', 1.0),
 ]
 
 HESAFF_PARAM_DICT = OrderedDict([(key, val) for (type_, key, val) in HESAFF_TYPED_PARAMS])
-HESAFF_PARAM_TYPES = [type_ for (type_, key, val) in HESAFF_TYPED_PARAMS]
 
 
 def grab_test_imgpath(p='astro'):
@@ -131,16 +92,13 @@ def _build_typed_params_kwargs_docstr_block(typed_params):
     kwargs_lines = []
     for tup in typed_params:
         type_, name, default = tup
-        typestr = str(type_).replace('<class \'ctypes.c_', '').replace('\'>', '')
+        typestr = getattr(type_, '__name__', str(type_))
         line_fmtstr = '{name} ({typestr}): default={default}'
         line = line_fmtstr.format(name=name, typestr=typestr, default=default)
         kwargs_lines.append(line)
     kwargs_docstr_block = ('Kwargs:\n' + ub.indent('\n'.join(kwargs_lines), '    '))
     return ub.indent(kwargs_docstr_block, '    ')
 hesaff_kwargs_docstr_block = _build_typed_params_kwargs_docstr_block(HESAFF_TYPED_PARAMS)
-
-
-HESAFF_CLIB = None
 
 
 def argparse_hesaff_params():
@@ -156,53 +114,8 @@ def argparse_hesaff_params():
     return hesskw
 
 
-def _load_hesaff_clib():
-    """
-    Specificially loads the hesaff lib and defines its functions
-    """
-    # Get the root directory which should have the dynamic library in it
-    #root_dir = realpath(dirname(__file__)) if '__file__' in vars() else realpath(os.getcwd())
-
-    # os.path.dirname(sys.executable)
-    #if getattr(sys, 'frozen', False):
-    #    # we are running in a |PyInstaller| bundle
-    #     root_dir = realpath(sys._MEIPASS)
-    #else:
-    #    # we are running in a normal Python environment
-    #    root_dir = realpath(dirname(__file__))
-    root_dir = realpath(dirname(__file__))
-
-    libname = 'hesaff'
-    (clib, def_cfunc, lib_fpath) = ctypes_interface.load_clib(libname, root_dir)
-    # Expose extern C Functions to hesaff's clib
-    #def_cfunc(ctypes.c_char_p, 'cmake_build_type',       [])
-    #def_cfunc(None,  'free_char',       [ctypes.c_char_p])
-    def_cfunc(int_t, 'get_cpp_version',        [])
-    def_cfunc(int_t, 'is_debug_mode',          [])
-    def_cfunc(int_t, 'detect',                 [obj_t])
-    def_cfunc(int_t, 'get_kpts_dim',           [])
-    def_cfunc(int_t, 'get_desc_dim',           [])
-    def_cfunc(None,  'exportArrays',           [obj_t, int_t, kpts_t, vecs_t])
-    def_cfunc(None,  'extractDesc',            [obj_t, int_t, kpts_t, vecs_t])
-    def_cfunc(None,  'extractPatches',         [obj_t, int_t, kpts_t, img32_t])
-    def_cfunc(None,  'extractDescFromPatches', [int_t, int_t, int_t, img_t, vecs_t])
-    def_cfunc(obj_t, 'new_hesaff_fpath',       [str_t] + HESAFF_PARAM_TYPES)
-    def_cfunc(obj_t, 'new_hesaff_image',       [img_t, int_t, int_t, int_t] + HESAFF_PARAM_TYPES)
-    def_cfunc(None,  'free_hesaff',            [obj_t])
-    def_cfunc(obj_t, 'detectFeaturesListStep1',   [int_t, str_list_t] + HESAFF_PARAM_TYPES)
-    def_cfunc(None,  'detectFeaturesListStep2',    [int_t, obj_t, int_array_t])
-    def_cfunc(None,  'detectFeaturesListStep3',    [int_t, obj_t, int_array_t, int_array_t, kpts_t, vecs_t])
-    return clib, lib_fpath
-
-# Create a global interface to the hesaff lib
-try:
-    HESAFF_CLIB, __LIB_FPATH__ = _load_hesaff_clib()
-except AttributeError:
-    print('Need to rebuild hesaff')
-    raise
-
-KPTS_DIM = HESAFF_CLIB.get_kpts_dim()
-DESC_DIM = HESAFF_CLIB.get_desc_dim()
+KPTS_DIM = _hesaff.get_kpts_dim()
+DESC_DIM = _hesaff.get_desc_dim()
 
 
 #============================
@@ -238,54 +151,6 @@ def _make_hesaff_cpp_params(kwargs):
     return hesaff_params
 
 
-def _cast_strlist_to_C(py_strlist):
-    """
-    Converts a python list of strings into a c array of strings
-
-    References:
-        http://stackoverflow.com/questions/3494598/pass-list-of-strings-ctypes
-    """
-    c_strarr = (str_t * len(py_strlist))()
-    c_strarr[:] = py_strlist
-    return c_strarr
-
-
-def _new_fpath_hesaff(img_fpath, **kwargs):
-    """ Creates new detector object which reads the image """
-    hesaff_params = _make_hesaff_cpp_params(kwargs)
-    hesaff_args = hesaff_params.values()  # pass all parameters to HESAFF_CLIB
-    img_realpath = realpath(img_fpath)
-    # convert out of unicode
-    img_realpath = img_realpath.encode('ascii')
-    try:
-        hesaff_ptr = HESAFF_CLIB.new_hesaff_fpath(img_realpath, *hesaff_args)
-    except Exception:
-        msg = 'hesaff_ptr = HESAFF_CLIB.new_hesaff_fpath(img_realpath, *hesaff_args)',
-        print('msg = {!r}'.format(msg))
-        print('hesaff_args = {!r}'.format(hesaff_args))
-        raise
-    return hesaff_ptr
-
-
-def _new_image_hesaff(img, **kwargs):
-    """ Creates new detector object which reads the image """
-    hesaff_params = _make_hesaff_cpp_params(kwargs)
-    hesaff_args = hesaff_params.values()  # pass all parameters to HESAFF_CLIB
-    rows, cols = img.shape[0:2]
-    if len(img.shape) == 2:
-        channels = 1
-    else:
-        channels = img.shape[2]
-    try:
-        hesaff_ptr = HESAFF_CLIB.new_hesaff_image(
-            img, rows, cols, channels, *hesaff_args)
-    except Exception:
-        msg = ('hesaff_ptr = '
-               'HESAFF_CLIB.new_hesaff_image(img_realpath, *hesaff_args)')
-        print('msg = {!r}'.format(msg))
-        print('hesaff_args = {!r}'.format(hesaff_args))
-        raise
-    return hesaff_ptr
 
 
 #============================
@@ -298,7 +163,7 @@ def get_hesaff_default_params():
 
 
 def get_is_debug_mode():
-    return HESAFF_CLIB.is_debug_mode()
+    return _hesaff.is_debug_mode()
 
 
 def get_cpp_version():
@@ -326,8 +191,7 @@ def get_cpp_version():
     #HESAFF_CLIB.free_char(str_ptr)
     #print('pystr = %r' % (pystr,))
     #print('pystr = %s' % (pystr,))
-    cpp_version = HESAFF_CLIB.get_cpp_version()
-    return cpp_version
+    return _hesaff.get_cpp_version()
 
 
 # full detection and extraction
@@ -443,15 +307,7 @@ def detect_feats(img_fpath, use_adaptive_scale=False, nogravity_hack=False, **kw
         >>> #pt.show_if_requested()
     """
     # Load image
-    hesaff_ptr = _new_fpath_hesaff(img_fpath, **kwargs)
-    # Get num detected
-    nKpts = HESAFF_CLIB.detect(hesaff_ptr)
-    # Allocate arrays
-    kpts = alloc_kpts(nKpts)
-    vecs = alloc_vecs(nKpts)
-    # Populate arrays
-    HESAFF_CLIB.exportArrays(hesaff_ptr, nKpts, kpts, vecs)
-    HESAFF_CLIB.free_hesaff(hesaff_ptr)
+    kpts, vecs = _hesaff.detect_fpath(img_fpath, **kwargs)
     if use_adaptive_scale:  # Adapt scale if requested
         kpts, vecs = adapt_scale(img_fpath, kpts)
     if nogravity_hack:
@@ -522,40 +378,9 @@ def detect_feats_list(image_paths_list, **kwargs):
         >>> assert all([x.sum() == 0 for x in diff_kpts]), 'inconsistent results'
         >>> assert all([x.sum() == 0 for x in diff_vecs]), 'inconsistent results'
     """
-    # Get Num Images
-    num_imgs = len(image_paths_list)
-
-    # Cast string list to C
-    realpaths_list = [realpath(path).encode('ascii') for path in image_paths_list]
-
-    c_strs = _cast_strlist_to_C(realpaths_list)
-
-    # Get algorithm parameters
-    hesaff_params = HESAFF_PARAM_DICT.copy()
-    hesaff_params.update(kwargs)
-    # pass all parameters to HESAFF_CLIB
-    hesaff_args = hesaff_params.values()
-
-    length_array = np.empty(num_imgs, dtype=int_t)
-    detector_array = HESAFF_CLIB.detectFeaturesListStep1(num_imgs, c_strs, *hesaff_args)
-    HESAFF_CLIB.detectFeaturesListStep2(num_imgs, detector_array, length_array)
-    total_pts = length_array.sum()
-    # allocate arrays
-    total_num_arrays = num_imgs * total_pts
-    flat_kpts_ptr = alloc_kpts(total_num_arrays)
-    flat_vecs_ptr = alloc_vecs(total_num_arrays)
-    # TODO: get this working
-    offset_array = np.roll(length_array.cumsum(), 1).astype(int_t)
-    # np.array([0] + length_array.cumsum().tolist()[0:-1], int_t)
-    offset_array[0] = 0
-    HESAFF_CLIB.detectFeaturesListStep3(num_imgs, detector_array,
-                                         length_array, offset_array,
-                                         flat_kpts_ptr, flat_vecs_ptr)
-
-    # reshape into jagged arrays
-    kpts_list = [flat_kpts_ptr[o:o + l] for o, l in zip(offset_array, length_array)]
-    vecs_list = [flat_vecs_ptr[o:o + l] for o, l in zip(offset_array, length_array)]
-
+    results = [detect_feats(path, **kwargs) for path in image_paths_list]
+    kpts_list = [item[0] for item in results]
+    vecs_list = [item[1] for item in results]
     return kpts_list, vecs_list
 
 
@@ -587,15 +412,7 @@ def detect_feats_in_image(img, **kwargs):
         >>> pt.show_if_requested()
     """
     #Valid keyword arguments are: + str(HESAFF_PARAM_DICT.keys())
-    hesaff_ptr = _new_image_hesaff(img, **kwargs)
-    # Get num detected
-    nKpts = HESAFF_CLIB.detect(hesaff_ptr)
-    # Allocate arrays
-    kpts = alloc_kpts(nKpts)
-    vecs = alloc_vecs(nKpts)
-    HESAFF_CLIB.exportArrays(hesaff_ptr, nKpts, kpts, vecs)  # Populate arrays
-    HESAFF_CLIB.free_hesaff(hesaff_ptr)
-    return kpts, vecs
+    return _hesaff.detect_image(img, **kwargs)
 
 
 def detect_num_feats_in_image(img, **kwargs):
@@ -653,11 +470,7 @@ def detect_num_feats_in_image(img, **kwargs):
     kwargs['only_count'] = True
     #kwargs['only_count'] = False
     #Valid keyword arguments are: + str(HESAFF_PARAM_DICT.keys())
-    hesaff_ptr = _new_image_hesaff(img, **kwargs)
-    # Get num detected
-    nKpts = HESAFF_CLIB.detect(hesaff_ptr)
-    HESAFF_CLIB.free_hesaff(hesaff_ptr)
-    return nKpts
+    return _hesaff.count_image(img, **kwargs)
 
 
 # just extraction
@@ -722,16 +535,10 @@ def extract_vecs(img_fpath, kpts, **kwargs):
         >>> pt.set_figtitle('Error Keypoints')
         >>> pt.show_if_requested()
     """
-    hesaff_ptr = _new_fpath_hesaff(img_fpath, **kwargs)
-    nKpts = len(kpts)
-    # allocate memory for new decsriptors
-    vecs = alloc_vecs(nKpts)
-    # kpts might not be contiguous
-    kpts = np.ascontiguousarray(kpts)
-    # extract decsriptors at given locations
-    HESAFF_CLIB.extractDesc(hesaff_ptr, nKpts, kpts, vecs)
-    HESAFF_CLIB.free_hesaff(hesaff_ptr)
-    return vecs
+    kpts = np.ascontiguousarray(kpts, dtype=kpts_dtype)
+    if isinstance(img_fpath, str):
+        return _hesaff.extract_desc_fpath(img_fpath, kpts, **kwargs)
+    return _hesaff.extract_desc_image(img_fpath, kpts, **kwargs)
 
 
 def extract_patches(img_or_fpath, kpts, **kwargs):
@@ -772,18 +579,10 @@ def extract_patches(img_or_fpath, kpts, **kwargs):
         >>> ax.set_title('Python extracted')
         >>> pt.show_if_requested()
     """
+    kpts = np.ascontiguousarray(kpts, dtype=kpts_dtype)
     if isinstance(img_or_fpath, str):
-        hesaff_ptr = _new_fpath_hesaff(img_or_fpath, **kwargs)
-    else:
-        hesaff_ptr = _new_image_hesaff(img_or_fpath, **kwargs)
-    nKpts = len(kpts)
-    patch_list = alloc_patches(nKpts, 41)   # allocate memory for patches
-    patch_list[:] = 0
-    kpts = np.ascontiguousarray(kpts)  # kpts might not be contiguous
-    # extract decsriptors at given locations
-    HESAFF_CLIB.extractPatches(hesaff_ptr, nKpts, kpts, patch_list)
-    HESAFF_CLIB.free_hesaff(hesaff_ptr)
-    return patch_list
+        return _hesaff.extract_patches_fpath(img_or_fpath, kpts, **kwargs)
+    return _hesaff.extract_patches_image(img_or_fpath, kpts, **kwargs)
 
 
 def extract_desc_from_patches(patch_list):
@@ -852,38 +651,26 @@ def extract_desc_from_patches(patch_list):
     elif ndims == 4 and patch_list.shape[-1] == 3:
         assert False, 'cannot handle color images yet'
     assert patch_list.flags['C_CONTIGUOUS'], 'patch_list must be contiguous array'
-    num_patches, patch_h, patch_w = patch_list.shape[0:3]
-    assert patch_h == patch_w, 'must be square patches'
-    vecs_array = alloc_vecs(num_patches)
-    #vecs_array[:] = 0
-    #print('vecs_array = %r' % (vecs_array,))
     # If the input array list is memmaped it is a good idea to process in chunks
     CHUNKS = isinstance(patch_list, np.memmap)
     if not CHUNKS:
-        HESAFF_CLIB.extractDescFromPatches(num_patches, patch_h, patch_w,
-                                           patch_list, vecs_array)
-    else:
-        chunksize = 2048
-        _iter = range(num_patches // chunksize)
-        _progiter = ub.ProgIter(_iter, desc='extracting sift chunk')
-        for ix in _progiter:
-            lx = ix * chunksize
-            rx = (ix + 1) * chunksize
-            patch_sublist = np.array(patch_list[lx:rx])
-            sublist_size = rx - lx
-            HESAFF_CLIB.extractDescFromPatches(sublist_size, patch_h, patch_w,
-                                               patch_sublist,
-                                               vecs_array[lx:rx])
-        last_size = num_patches - rx
-        if last_size > 0:
-            lx = rx
-            rx = lx + last_size
-            patch_sublist = np.array(patch_list[lx:rx])
-            sublist_size = rx - lx
-            HESAFF_CLIB.extractDescFromPatches(sublist_size, patch_h, patch_w,
-                                               patch_sublist,
-                                               vecs_array[lx:rx])
-    #print('vecs_array = %r' % (vecs_array,))
+        return _hesaff.extract_desc_from_patches(patch_list)
+    chunksize = 2048
+    num_patches = patch_list.shape[0]
+    vecs_array = alloc_vecs(num_patches)
+    _iter = range(num_patches // chunksize)
+    _progiter = ub.ProgIter(_iter, desc='extracting sift chunk')
+    for ix in _progiter:
+        lx = ix * chunksize
+        rx = (ix + 1) * chunksize
+        patch_sublist = np.array(patch_list[lx:rx])
+        vecs_array[lx:rx] = _hesaff.extract_desc_from_patches(patch_sublist)
+    last_size = num_patches - rx
+    if last_size > 0:
+        lx = rx
+        rx = lx + last_size
+        patch_sublist = np.array(patch_list[lx:rx])
+        vecs_array[lx:rx] = _hesaff.extract_desc_from_patches(patch_sublist)
     return vecs_array
 
 #============================
