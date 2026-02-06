@@ -288,7 +288,10 @@ jobs:
             pyds = [name for name in members if name.startswith("pyhesaff/_hesaff") and name.endswith(".pyd")]
             if not pyds:
                 raise SystemExit(f"{wheel.name} missing pyhesaff/_hesaff*.pyd")
-            print(f"{wheel.name} contains {pyds[0]}")
+            dlls = [name for name in members if name.startswith("pyhesaff.libs/") and name.lower().endswith(".dll")]
+            if not dlls:
+                raise SystemExit(f"{wheel.name} missing pyhesaff.libs/*.dll")
+            print(f"{wheel.name} contains {pyds[0]} and {len(dlls)} bundled dll(s).")
         PY
     - name: Show wheel DLL dependencies (Windows)
       if: runner.os == 'Windows'

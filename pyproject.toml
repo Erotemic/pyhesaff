@@ -102,7 +102,7 @@ description = "Routines for computation of hessian affine keypoints in images."
 [tool.cibuildwheel]
 build = "cp39-* cp310-* cp311-* cp312-* cp313-* cp314-*"
 build-frontend = "build"
-skip = "pp* *-musllinux_* *-win*"
+skip = "pp* *-musllinux_*"
 build-verbosity = 1
 environment = "PYTHONUTF8=1"
 # testing on the build container fails because we need the cv2
@@ -134,6 +134,7 @@ yum -y install opencv-devel
 #[tool.cibuildwheel.windows]
 [tool.cibuildwheel.windows]
 before-all = "vcpkg install opencv4:x64-windows"
+repair-wheel-command = "python -m pip install delvewheel && python -m delvewheel repair -w {dest_dir} --add-path C:/vcpkg/installed/x64-windows/bin {wheel}"
 
 #[tool.cibuildwheel.macos]
 #before-all = "brew install lz4"
