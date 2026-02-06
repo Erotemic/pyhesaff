@@ -182,17 +182,30 @@ set(HESAFF_CORE_SOURCES
     src/siftdesc.cpp)
 
 find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
-find_package(pybind11 CONFIG REQUIRED)
+option(USE_NANOBIND "Use nanobind bindings when available" ON)
+find_package(nanobind CONFIG QUIET)
+if(NOT nanobind_FOUND)
+  find_package(pybind11 CONFIG REQUIRED)
+endif()
 
 message(STATUS "OpenMP_SHARED_LINKER_FLAGS = ${OpenMP_SHARED_LINKER_FLAGS}")
 message(STATUS "OpenMP_EXE_LINKER_FLAGS = ${OpenMP_EXE_LINKER_FLAGS}")
 message(STATUS "OpenCV_INCLUDE_DIR = ${OpenCV_INCLUDE_DIR}")
 message(STATUS "OpenCV_LIBRARIES = ${OpenCV_LIBRARIES}")
 
-pybind11_add_module(_hesaff MODULE
-    src/pybind_hesaff.cpp
-    ${HESAFF_CORE_SOURCES}
-)
+if(nanobind_FOUND AND USE_NANOBIND)
+  message(STATUS "Using nanobind for _hesaff")
+  nanobind_add_module(_hesaff MODULE
+      src/nanobind_hesaff.cpp
+      ${HESAFF_CORE_SOURCES}
+  )
+else()
+  message(STATUS "Using pybind11 for _hesaff")
+  pybind11_add_module(_hesaff MODULE
+      src/pybind_hesaff.cpp
+      ${HESAFF_CORE_SOURCES}
+  )
+endif()
 
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 if(WIN32)
