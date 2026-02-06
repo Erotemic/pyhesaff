@@ -1,6 +1,32 @@
 [build-system]
-requires = [ "scikit-build-core>=0.9.0", "setuptools>=41.0.1", "pybind11", "numpy", "ninja", "build" ]
+requires = [ "scikit-build-core>=0.9.0", "setuptools>=41.0.1", "pybind11", "numpy", "build" ]
 build-backend = "scikit_build_core.build"
+
+[project]
+name = "pyhesaff"
+version = "2.1.4"
+description = "Routines for computation of hessian affine keypoints in images."
+readme = "README.rst"
+requires-python = ">=3.9"
+authors = [
+    { name = "Krystian Mikolajczyk" },
+    { name = "Michal Perdoch" },
+    { name = "Jon Crall", email = "erotemic@gmail.com" },
+    { name = "Avi Weinstock" },
+]
+license = { text = "Apache 2" }
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
 
 [tool.mypy]
 ignore_missing_imports = true
