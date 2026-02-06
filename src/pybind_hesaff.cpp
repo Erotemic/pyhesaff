@@ -368,12 +368,12 @@ PYBIND11_MODULE(_hesaff, m) {
     m.def("is_debug_mode", []() { return static_cast<bool>(is_debug_mode()); });
     m.def("get_kpts_dim", &get_kpts_dim);
     m.def("get_desc_dim", &get_desc_dim);
-    m.def("detect_fpath", &detect_fpath, py::arg("fpath"), py::arg("kwargs") = py::kwargs());
-    m.def("detect_image", &detect_image, py::arg("image"), py::arg("kwargs") = py::kwargs());
-    m.def("count_image", &count_image, py::arg("image"), py::arg("kwargs") = py::kwargs());
-    m.def("extract_desc_fpath", &extract_desc_fpath, py::arg("fpath"), py::arg("kpts"), py::arg("kwargs") = py::kwargs());
-    m.def("extract_desc_image", &extract_desc_image, py::arg("image"), py::arg("kpts"), py::arg("kwargs") = py::kwargs());
-    m.def("extract_patches_fpath", &extract_patches_fpath, py::arg("fpath"), py::arg("kpts"), py::arg("kwargs") = py::kwargs());
-    m.def("extract_patches_image", &extract_patches_image, py::arg("image"), py::arg("kpts"), py::arg("kwargs") = py::kwargs());
+    m.def("detect_fpath", &detect_fpath, py::arg("fpath"));
+    m.def("detect_image", &detect_image, py::arg("image"));
+    m.def("count_image", &count_image, py::arg("image"));
+    m.def("extract_desc_fpath", &extract_desc_fpath, py::arg("fpath"), py::arg("kpts"));
+    m.def("extract_desc_image", &extract_desc_image, py::arg("image"), py::arg("kpts"));
+    m.def("extract_patches_fpath", &extract_patches_fpath, py::arg("fpath"), py::arg("kpts"));
+    m.def("extract_patches_image", &extract_patches_image, py::arg("image"), py::arg("kpts"));
     m.def("extract_desc_from_patches", &extract_desc_from_patches, py::arg("patches"));
 }
