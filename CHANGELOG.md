@@ -3,7 +3,10 @@
 We [keep a Changelog](https://keepachangelog.com/en/1.0.0/) using [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## Version 2.1.4 - Unreleased
+## Version 2.2.0 - Unreleased
+
+### Changed
+* Replace ctypes runtime loading with compiled `_hesaff` extension module and update packaging/CI to bundle Windows DLL dependencies.
 
 
 ## Version 2.1.3 - Released 2025-08-24

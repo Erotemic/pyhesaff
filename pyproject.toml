@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "pyhesaff"
-version = "2.1.4"
+version = "2.2.0"
 description = "Routines for computation of hessian affine keypoints in images."
 readme = "README.rst"
 requires-python = ">=3.9"
