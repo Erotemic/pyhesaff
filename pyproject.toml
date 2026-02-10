@@ -78,11 +78,11 @@ ignore_missing_imports = true
 exclude = ".*"
 
 [tool.xcookie]
-tags = [ "github", "cv2", "erotemic", "binpy", "nosrcdist"]
+tags = [ "github", "cv2", "erotemic", "binpy", "nosrcdist", "vcpkg", "opencv_link", "win_smoke", "ci_debug_windows_env" ]
 mod_name = "pyhesaff"
 rel_mod_parent_dpath = "."
 #os = [ "linux", "osx", "win",]
-os = [ "linux" ]
+os = [ "linux", "win" ]
 repo_name = "pyhesaff"
 min_python = "3.9"
 author = "Krystian Mikolajczyk, Michal Perdoch, Jon Crall, Avi Weinstock"
@@ -91,6 +91,7 @@ author_email = "erotemic@gmail.com"
 version = "{mod_dpath}/__init__.py::__version__"
 license = "Apache 2"
 dev_status = "beta"
+use_uv = true
 description = "Routines for computation of hessian affine keypoints in images."
 
 
