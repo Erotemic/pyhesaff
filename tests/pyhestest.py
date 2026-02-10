@@ -7,6 +7,7 @@ import pyhesaff
 
 def get_test_image():
     from vtool.tests import grabdata
+
     img_fname = 'zebra.jpg'
     if '--zebra.png' in sys.argv:
         img_fname = 'zebra.jpg'
@@ -23,23 +24,22 @@ def load_test_data(short=False, n=0, use_cpp=False, **kwargs):
     if 'short' not in vars():
         short = False
     # Read Image
-    #ellipse.rrr()
+    # ellipse.rrr()
     nScales = 4
     nSamples = 16
     img_fpath = get_test_image()
     imgBGR = cv2.imread(img_fpath)
     imgLAB = cv2.cvtColor(imgBGR, cv2.COLOR_BGR2LAB)
     imgL = imgLAB[:, :, 0]
-    detect_kwargs = {
-        'scale_min': 20,
-        'scale_max': 100
-    }
+    detect_kwargs = {'scale_min': 20, 'scale_max': 100}
     detect_kwargs.update(kwargs)
     if not use_cpp:
         kpts, desc = pyhesaff.detect_feats(img_fpath, **detect_kwargs)
     else:
         # Try the new C++ code
-        [kpts], [desc] = pyhesaff.detect_feats_list([img_fpath], **detect_kwargs)
+        [kpts], [desc] = pyhesaff.detect_feats_list(
+            [img_fpath], **detect_kwargs
+        )
 
     if short and n > 0:
         extra_fxs = []

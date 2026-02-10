@@ -3,10 +3,12 @@
 
 def test_simple_iterative():
     import pytest
+
     pytest.skip('Broken in CI')
 
     import pyhesaff
     from pyhesaff._pyhesaff import grab_test_imgpath
+
     fpath_list = [
         grab_test_imgpath(),
     ]
@@ -24,13 +26,14 @@ def test_simple_iterative():
     if 0:
         import matplotlib as mpl
         from matplotlib import pyplot as plt
+
         fig = plt.figure()
         for i, fpath, kpts in enumerate(zip(fpath_list, kpts_list), start=1):
             ax = fig.add_subplot(2, 2, i)
             img = mpl.image.imread(fpath)
             plt.imshow(img)
             _xs, _ys = kpts.T[0:2]
-            ax.plot(_xs, _ys, 'ro', alpha=.5)
+            ax.plot(_xs, _ys, 'ro', alpha=0.5)
 
 
 if __name__ == '__main__':
@@ -39,4 +42,5 @@ if __name__ == '__main__':
         python -m pyhesaff.tests.test_pyhesaff_simple_iterative
     """
     import xdoctest
+
     xdoctest.doctest_module(__file__)

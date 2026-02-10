@@ -17,12 +17,19 @@ def detect_feats_main():
     if ub.argflag('--show'):
         # Show keypoints
         imgBGR = cv2.imread(img_fpath)
-        default_showkw = dict(ori=False, ell=True, ell_linewidth=2,
-                              ell_alpha=.4, ell_color='distinct')
+        default_showkw = dict(
+            ori=False,
+            ell=True,
+            ell_linewidth=2,
+            ell_alpha=0.4,
+            ell_color='distinct',
+        )
         print('default_showkw = %r' % (default_showkw,))
         import utool as ut
+
         showkw = ut.argparse_dict(default_showkw)
         import plottool as pt
+
         pt.interact_keypoints.ishow_keypoints(imgBGR, kpts, vecs, **showkw)
         pt.show_if_requested()
 

@@ -3,15 +3,16 @@ This helps find the shared library that contains the compiled subroutines.
 Its a bit hacky and could use a cleanup by someone who really understands
 how python c-extension libraries are named and placed depending on system.
 """
+
 from os.path import join, exists, normpath
 import sys
 import os
 import ctypes
 
 
-#============================
+# ============================
 # general ctypes interface
-#============================
+# ============================
 
 __DEBUG_CLIB__ = '--debug' in sys.argv or '--debug-clib' in sys.argv
 
@@ -36,20 +37,21 @@ def get_plat_specifier():
 
 def _py_ver_str():
     """Return 'MAJOR.MINOR' (e.g., '3.12')."""
-    return f"{sys.version_info.major}.{sys.version_info.minor}"
+    return f'{sys.version_info.major}.{sys.version_info.minor}'
 
 
 def _norm_arch():
     """Normalize common architecture names to the ones your code expects."""
     import platform
-    m = (platform.machine() or "").lower()
-    if m in {"x86_64", "amd64"}:
-        return "x86_64"
-    if m in {"i386", "i686", "x86"}:
-        return "i686"
-    if m in {"aarch64", "arm64"}:
-        return "arm64"
-    return m or ("x86_64" if sys.maxsize > 2**32 else "i686")
+
+    m = (platform.machine() or '').lower()
+    if m in {'x86_64', 'amd64'}:
+        return 'x86_64'
+    if m in {'i386', 'i686', 'x86'}:
+        return 'i686'
+    if m in {'aarch64', 'arm64'}:
+        return 'arm64'
+    return m or ('x86_64' if sys.maxsize > 2**32 else 'i686')
 
 
 def get_plat_specifier2():
@@ -58,10 +60,11 @@ def get_plat_specifier2():
     Mirrors your existing format: '.<plat>-<pyver>' + optional '-pydebug'.
     """
     import sysconfig
+
     plat_name = sysconfig.get_platform() or sys.platform
-    plat_specifier = f".{plat_name}-{_py_ver_str()}"
-    if hasattr(sys, "gettotalrefcount"):  # CPython debug builds
-        plat_specifier += "-pydebug"
+    plat_specifier = f'.{plat_name}-{_py_ver_str()}'
+    if hasattr(sys, 'gettotalrefcount'):  # CPython debug builds
+        plat_specifier += '-pydebug'
     return plat_specifier
 
 
@@ -71,60 +74,63 @@ def get_candidate_plat_specifiers2():
     Keeps your legacy candidates and adds a few modern ones (manylinux, macOS).
     """
     import sysconfig
+
     arch = _norm_arch()
     py_ver = _py_ver_str()
     plat_name = sysconfig.get_platform() or sys.platform
 
     plat_name_cands = [plat_name]
 
-    if sys.platform.startswith("linux"):
+    if sys.platform.startswith('linux'):
         # Keep broad fallbacks and add some manylinux variants that show up in practice.
         plat_name_cands += [
-            "linux",
-            "manylinux",
-            "manylinux1",
-            "manylinux2010",
-            "manylinux2014",
+            'linux',
+            'manylinux',
+            'manylinux1',
+            'manylinux2010',
+            'manylinux2014',
         ]
         # Wheel-style tags sometimes include glibc floor; include a couple likely ones.
         # (Your filenames use '-' not '_', but we’ll keep your format below.)
         if arch:
             plat_name_cands += [
-                f"manylinux_2_17_{arch}",
-                f"manylinux_2_5_{arch}",
+                f'manylinux_2_17_{arch}',
+                f'manylinux_2_5_{arch}',
             ]
 
-    elif sys.platform.startswith("darwin"):
+    elif sys.platform.startswith('darwin'):
         # Keep your historical macOS entries; add modern versions and universal2.
         plat_name_cands += [
-            "macosx-10.6",
-            "macosx-10.7",
-            "macosx-10.9",
-            "macosx-10.12",
-            "macosx-11.0",
-            "macosx-12.0",
-            "macosx-13.0",
-            "macosx-10.6-intel",
-            "macosx-10.7-intel",
-            "macosx-10.9-intel",
-            "macosx-10.12-intel",
-            "macosx-11.0-universal2",
-            "macosx-12.0-universal2",
+            'macosx-10.6',
+            'macosx-10.7',
+            'macosx-10.9',
+            'macosx-10.12',
+            'macosx-11.0',
+            'macosx-12.0',
+            'macosx-13.0',
+            'macosx-10.6-intel',
+            'macosx-10.7-intel',
+            'macosx-10.9-intel',
+            'macosx-10.12-intel',
+            'macosx-11.0-universal2',
+            'macosx-12.0-universal2',
         ]
 
-    elif sys.platform.startswith("win32"):
+    elif sys.platform.startswith('win32'):
         # Keep both in case filenames vary.
-        plat_name_cands += ["win-amd64", "win32"]
+        plat_name_cands += ['win-amd64', 'win32']
 
     spec_list = []
     for pn in plat_name_cands:
-        spec_list.extend([
-            f".{pn}-{py_ver}",
-            f".{pn}-{arch}-{py_ver}",
-        ])
+        spec_list.extend(
+            [
+                f'.{pn}-{py_ver}',
+                f'.{pn}-{arch}-{py_ver}',
+            ]
+        )
 
     # Bare suffix (your original behavior)
-    spec_list.append("")
+    spec_list.append('')
     return spec_list
 
 
@@ -133,7 +139,7 @@ def get_candidate_plat_specifiers():
         import distutils
     except ImportError:
         return get_candidate_plat_specifiers2()
-    if sys.maxsize > 2 ** 32:
+    if sys.maxsize > 2**32:
         arch = 'x86_64'  # TODO: get correct arch spec
     else:
         arch = 'i686'  # TODO: get correct arch spec
@@ -170,10 +176,12 @@ def get_candidate_plat_specifiers():
 
     spec_list = []
     for plat_name in plat_name_cands:
-        spec_list.extend([
-            '.{}-{}'.format(plat_name, sys.version[0:3]),
-            '.{}-{}-{}'.format(plat_name, arch, py_ver),
-        ])
+        spec_list.extend(
+            [
+                '.{}-{}'.format(plat_name, sys.version[0:3]),
+                '.{}-{}-{}'.format(plat_name, arch, py_ver),
+            ]
+        )
     spec_list.append('')
     return spec_list
 
@@ -210,9 +218,11 @@ def get_lib_fname_candidates(libname):
     else:
         raise Exception('Unknown operating system: %s' % sys.platform)
     # Construct priority ordering of libnames
-    libnames = [''.join((prefix, spec, ext))
-                for spec in spec_list
-                for prefix in prefix_list]
+    libnames = [
+        ''.join((prefix, spec, ext))
+        for spec in spec_list
+        for prefix in prefix_list
+    ]
     return libnames
 
 
@@ -232,7 +242,7 @@ def get_lib_dpath_list(root_dir):
 
 
 def find_lib_fpath(libname, root_dir, verbose=False):
-    """ Search for the library """
+    """Search for the library"""
     lib_fname_list = get_lib_fname_candidates(libname)
     tried_fpaths = []
 
@@ -260,9 +270,12 @@ def find_lib_fpath(libname, root_dir, verbose=False):
         return FINAL_LIB_FPATH
     else:
         contents = os.listdir(root_dir)
-        msg = ('\n[C!] find_lib_fpath(libname={!r}, root_dir={!r})'.format(
-               libname, root_dir) +
-               '\n[c!] Cannot FIND dynamic library')
+        msg = (
+            '\n[C!] find_lib_fpath(libname={!r}, root_dir={!r})'.format(
+                libname, root_dir
+            )
+            + '\n[c!] Cannot FIND dynamic library'
+        )
         print(msg)
         print('\n[c!] Checked: '.join(tried_fpaths))
         print('UNABLE TO FIND LIB IN DPATH contents = {!r}'.format(contents))
@@ -297,17 +310,25 @@ def load_clib(libname, root_dir):
         print('[C!] Caught Exception:\n{!r}'.format(ex))
         errsuffix = 'Was the library correctly compiled?'
     else:
+
         def def_cfunc(return_type, func_name, arg_type_list):
-            'Function to define the types that python needs to talk to c'
+            "Function to define the types that python needs to talk to c"
             cfunc = getattr(clib, func_name)
             cfunc.restype = return_type
             cfunc.argtypes = arg_type_list
+
         clib.__LIB_FPATH__ = lib_fpath
         return clib, def_cfunc, lib_fpath
     print('[C!] cwd={!r}'.format(os.getcwd()))
-    print('[C!] load_clib(libname={!r}, root_dir={!r})'.format(libname, root_dir))
+    print(
+        '[C!] load_clib(libname={!r}, root_dir={!r})'.format(libname, root_dir)
+    )
     print('[C!] lib_fpath = {!r}'.format(lib_fpath))
-    errmsg = '[C] Cannot LOAD {!r} dynamic library. Caused by ex={!r}. {}'.format(libname, ex, errsuffix)
+    errmsg = (
+        '[C] Cannot LOAD {!r} dynamic library. Caused by ex={!r}. {}'.format(
+            libname, ex, errsuffix
+        )
+    )
     print(errmsg)
     raise ImportError(errmsg)
 
@@ -319,4 +340,5 @@ if __name__ == '__main__':
         python -m pyhesaff.ctypes_interface --allexamples
     """
     import xdoctest
+
     xdoctest.doctest_module(__file__)
