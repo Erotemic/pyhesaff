@@ -141,8 +141,10 @@ def parse_version(fpath):
 
 
 project = 'pyhesaff'
-copyright = '2025, Krystian Mikolajczyk Michal Perdoch Jon Crall Avi Weinstock'
-author = 'Krystian Mikolajczyk Michal Perdoch Jon Crall Avi Weinstock'
+copyright = (
+    '2026, Krystian Mikolajczyk, Michal Perdoch, Jon Crall, Avi Weinstock'
+)
+author = 'Krystian Mikolajczyk, Michal Perdoch, Jon Crall, Avi Weinstock'
 modname = 'pyhesaff'
 
 repo_dpath = dirname(dirname(dirname(__file__)))
@@ -378,7 +380,7 @@ latex_documents = [
         master_doc,
         'pyhesaff.tex',
         'pyhesaff Documentation',
-        'Krystian Mikolajczyk Michal Perdoch Jon Crall Avi Weinstock',
+        'Krystian Mikolajczyk, Michal Perdoch, Jon Crall, Avi Weinstock',
         'manual',
     ),
 ]
