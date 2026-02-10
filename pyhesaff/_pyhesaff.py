@@ -7,59 +7,87 @@ Command Line:
     python -m pyhesaff detect_feats --show
     python -m pyhesaff detect_feats --show --siftPower=0.5,
 """
+
 import numpy as np
 import ubelt as ub
 from collections import OrderedDict
 from pyhesaff import _hesaff
 
-#============================
+# ============================
 # hesaff ctypes interface
-#============================
+# ============================
 
 # numpy dtypes
 kpts_dtype = np.float32
 vecs_dtype = np.uint8
-img_dtype  = np.uint8
-img32_dtype  = np.float32
+img_dtype = np.uint8
+img32_dtype = np.float32
 # THE ORDER OF THIS LIST IS IMPORTANT!
 HESAFF_TYPED_PARAMS = [
     # Pyramid Params
-    (int,   'numberOfScales', 3),           # number of scale per octave
-    (float, 'threshold', 16.0 / 3.0),       # noise dependent threshold on the response (sensitivity)
-    (float, 'edgeEigenValueRatio', 10.0),   # ratio of the eigenvalues
-    (int,   'border', 5),                   # number of pixels ignored at the border of image
-    (int,   'maxPyramidLevels', -1),        # maximum number of pyramid divisions. -1 is no limit
+    (int, 'numberOfScales', 3),  # number of scale per octave
+    (
+        float,
+        'threshold',
+        16.0 / 3.0,
+    ),  # noise dependent threshold on the response (sensitivity)
+    (float, 'edgeEigenValueRatio', 10.0),  # ratio of the eigenvalues
+    (int, 'border', 5),  # number of pixels ignored at the border of image
+    (
+        int,
+        'maxPyramidLevels',
+        -1,
+    ),  # maximum number of pyramid divisions. -1 is no limit
     # Affine Shape Params
-    (int,   'maxIterations', 16),           # number of affine shape interations
-    (float, 'convergenceThreshold', 0.05),  # maximum deviation from isotropic shape at convergence
-    (int,   'smmWindowSize', 19),           # width and height of the SMM (second moment matrix) mask
-    (float, 'mrSize', 3.0 * np.sqrt(3.0)),  # size of the measurement region (as multiple of the feature scale)
+    (int, 'maxIterations', 16),  # number of affine shape interations
+    (
+        float,
+        'convergenceThreshold',
+        0.05,
+    ),  # maximum deviation from isotropic shape at convergence
+    (
+        int,
+        'smmWindowSize',
+        19,
+    ),  # width and height of the SMM (second moment matrix) mask
+    (
+        float,
+        'mrSize',
+        3.0 * np.sqrt(3.0),
+    ),  # size of the measurement region (as multiple of the feature scale)
     # SIFT params
-    (int,   'spatialBins', 4),
-    (int,   'orientationBins', 8),
+    (int, 'spatialBins', 4),
+    (int, 'orientationBins', 8),
     (float, 'maxBinValue', 0.2),
     # Shared params
-    (float, 'initialSigma', 1.6),           # amount of smoothing applied to the initial level of first octave
-    (int,   'patchSize', 41),               # width and height of the patch
+    (
+        float,
+        'initialSigma',
+        1.6,
+    ),  # amount of smoothing applied to the initial level of first octave
+    (int, 'patchSize', 41),  # width and height of the patch
     # My params
     (float, 'scale_min', -1.0),
     (float, 'scale_max', -1.0),
-    (bool,  'rotation_invariance', False),
-    (bool,  'augment_orientation', False),
-    (float, 'ori_maxima_thresh', .8),
-    (bool,  'affine_invariance', True),
-    (bool,  'only_count', False),
+    (bool, 'rotation_invariance', False),
+    (bool, 'augment_orientation', False),
+    (float, 'ori_maxima_thresh', 0.8),
+    (bool, 'affine_invariance', True),
+    (bool, 'only_count', False),
     #
-    (bool,  'use_dense', False),
-    (int,   'dense_stride', 32),
+    (bool, 'use_dense', False),
+    (int, 'dense_stride', 32),
     (float, 'siftPower', 1.0),
 ]
 
-HESAFF_PARAM_DICT = OrderedDict([(key, val) for (type_, key, val) in HESAFF_TYPED_PARAMS])
+HESAFF_PARAM_DICT = OrderedDict(
+    [(key, val) for (type_, key, val) in HESAFF_TYPED_PARAMS]
+)
 
 
 def grab_test_imgpath(p='astro'):
     from pyhesaff._demodata import grab_test_image_fpath
+
     fpath = grab_test_image_fpath(p)
     # Old and broken
     # fpath = ub.grabdata('https://i.imgur.com/KXhKM72.png',
@@ -71,6 +99,7 @@ def grab_test_imgpath(p='astro'):
 
 def imread(fpath):
     import cv2
+
     return cv2.imread(fpath)
 
 
@@ -96,9 +125,15 @@ def _build_typed_params_kwargs_docstr_block(typed_params):
         line_fmtstr = '{name} ({typestr}): default={default}'
         line = line_fmtstr.format(name=name, typestr=typestr, default=default)
         kwargs_lines.append(line)
-    kwargs_docstr_block = ('Kwargs:\n' + ub.indent('\n'.join(kwargs_lines), '    '))
+    kwargs_docstr_block = 'Kwargs:\n' + ub.indent(
+        '\n'.join(kwargs_lines), '    '
+    )
     return ub.indent(kwargs_docstr_block, '    ')
-hesaff_kwargs_docstr_block = _build_typed_params_kwargs_docstr_block(HESAFF_TYPED_PARAMS)
+
+
+hesaff_kwargs_docstr_block = _build_typed_params_kwargs_docstr_block(
+    HESAFF_TYPED_PARAMS
+)
 
 
 def argparse_hesaff_params():
@@ -107,6 +142,7 @@ def argparse_hesaff_params():
     default_dict_ = get_hesaff_default_params()
     try:
         import utool as ut
+
         hesskw = ut.argparse_dict(default_dict_, alias_dict=alias_dict)
     except Exception as ex:
         print('ex = {!r}'.format(ex))
@@ -118,9 +154,9 @@ KPTS_DIM = _hesaff.get_kpts_dim()
 DESC_DIM = _hesaff.get_desc_dim()
 
 
-#============================
+# ============================
 # helpers
-#============================
+# ============================
 
 
 def alloc_patches(nKpts, size=41):
@@ -137,7 +173,7 @@ def alloc_vecs(nKpts):
 def alloc_kpts(nKpts):
     # array of floats
     kpts = np.empty((nKpts, KPTS_DIM), kpts_dtype)
-    #kpts = np.zeros((nKpts, KPTS_DIM), kpts_dtype) - 1.0  # array of floats
+    # kpts = np.zeros((nKpts, KPTS_DIM), kpts_dtype) - 1.0  # array of floats
     return kpts
 
 
@@ -151,11 +187,9 @@ def _make_hesaff_cpp_params(kwargs):
     return hesaff_params
 
 
-
-
-#============================
+# ============================
 # hesaff python interface
-#============================
+# ============================
 
 
 def get_hesaff_default_params():
@@ -184,20 +218,22 @@ def get_cpp_version():
         >>> assert cpp_version == 4, 'cpp version mimatch'
     """
 
-    #str_ptr = HESAFF_CLIB.cmake_build_type()
+    # str_ptr = HESAFF_CLIB.cmake_build_type()
     # copy c string into python
-    #pystr = ctypes.c_char_p(str_ptr).value
+    # pystr = ctypes.c_char_p(str_ptr).value
     # need to free c string
-    #HESAFF_CLIB.free_char(str_ptr)
-    #print('pystr = %r' % (pystr,))
-    #print('pystr = %s' % (pystr,))
+    # HESAFF_CLIB.free_char(str_ptr)
+    # print('pystr = %r' % (pystr,))
+    # print('pystr = %s' % (pystr,))
     return _hesaff.get_cpp_version()
 
 
 # full detection and extraction
 
 
-def detect_feats(img_fpath, use_adaptive_scale=False, nogravity_hack=False, **kwargs):
+def detect_feats(
+    img_fpath, use_adaptive_scale=False, nogravity_hack=False, **kwargs
+):
     r"""
     driver function for detecting hessian affine keypoints from an image path.
     extra parameters can be passed to the hessian affine detector by using
@@ -411,7 +447,7 @@ def detect_feats_in_image(img, **kwargs):
         >>> pt.set_figtitle('Detect Kpts in Image')
         >>> pt.show_if_requested()
     """
-    #Valid keyword arguments are: + str(HESAFF_PARAM_DICT.keys())
+    # Valid keyword arguments are: + str(HESAFF_PARAM_DICT.keys())
     return _hesaff.detect_image(img, **kwargs)
 
 
@@ -468,8 +504,8 @@ def detect_num_feats_in_image(img, **kwargs):
     """
     # We dont need to find vectors at all here
     kwargs['only_count'] = True
-    #kwargs['only_count'] = False
-    #Valid keyword arguments are: + str(HESAFF_PARAM_DICT.keys())
+    # kwargs['only_count'] = False
+    # Valid keyword arguments are: + str(HESAFF_PARAM_DICT.keys())
     return _hesaff.count_image(img, **kwargs)
 
 
@@ -650,7 +686,9 @@ def extract_desc_from_patches(patch_list):
         patch_list = patch_list.reshape(patch_list.shape[0:3])
     elif ndims == 4 and patch_list.shape[-1] == 3:
         assert False, 'cannot handle color images yet'
-    assert patch_list.flags['C_CONTIGUOUS'], 'patch_list must be contiguous array'
+    assert patch_list.flags['C_CONTIGUOUS'], (
+        'patch_list must be contiguous array'
+    )
     # If the input array list is memmaped it is a good idea to process in chunks
     CHUNKS = isinstance(patch_list, np.memmap)
     if not CHUNKS:
@@ -673,9 +711,10 @@ def extract_desc_from_patches(patch_list):
         vecs_array[lx:rx] = _hesaff.extract_desc_from_patches(patch_sublist)
     return vecs_array
 
-#============================
+
+# ============================
 # other
-#============================
+# ============================
 
 
 def test_rot_invar():
@@ -695,6 +734,7 @@ def test_rot_invar():
     import cv2
     import vtool as vt
     import plottool_ibeis as pt
+
     TAU = 2 * np.pi
     fnum = pt.next_fnum()
     NUM_PTS = 5  # 9
@@ -708,42 +748,63 @@ def test_rot_invar():
     for theta in theta_list:
         print('-----------------')
         print('theta = %r' % (theta,))
-        img_fpath = vt.rotate_image_ondisk(img_fpath2, theta, border_mode=cv2.BORDER_REPLICATE)
+        img_fpath = vt.rotate_image_ondisk(
+            img_fpath2, theta, border_mode=cv2.BORDER_REPLICATE
+        )
         if not ub.argflag('--nocpp'):
-            (kpts_list_ri, vecs_list2) = detect_feats(img_fpath, rotation_invariance=True)
+            (kpts_list_ri, vecs_list2) = detect_feats(
+                img_fpath, rotation_invariance=True
+            )
             kpts_ri = kpts_list_ri[0:2]
-        (kpts_list_gv, vecs_list1) = detect_feats(img_fpath, rotation_invariance=False)
+        (kpts_list_gv, vecs_list1) = detect_feats(
+            img_fpath, rotation_invariance=False
+        )
         kpts_gv = kpts_list_gv[0:2]
         # find_kpts_direction
         imgBGR = imread(img_fpath)
-        kpts_ripy = vt.find_kpts_direction(imgBGR, kpts_gv, DEBUG_ROTINVAR=False)
+        kpts_ripy = vt.find_kpts_direction(
+            imgBGR, kpts_gv, DEBUG_ROTINVAR=False
+        )
         # Verify results stdout
-        #print('nkpts = %r' % (len(kpts_gv)))
-        #print(vt.kpts_repr(kpts_gv))
-        #print(vt.kpts_repr(kpts_ri))
-        #print(vt.kpts_repr(kpts_ripy))
+        # print('nkpts = %r' % (len(kpts_gv)))
+        # print(vt.kpts_repr(kpts_gv))
+        # print(vt.kpts_repr(kpts_ri))
+        # print(vt.kpts_repr(kpts_ripy))
         # Verify results plot
         pt.figure(fnum=fnum, pnum=next_pnum())
         pt.imshow(imgBGR)
-        #if len(kpts_gv) > 0:
+        # if len(kpts_gv) > 0:
         #    pt.draw_kpts2(kpts_gv, ori=True, ell_color=pt.BLUE, ell_linewidth=10.5)
         ell = False
         rect = True
         if not ub.argflag('--nocpp'):
             if len(kpts_ri) > 0:
-                pt.draw_kpts2(kpts_ri, rect=rect, ell=ell, ori=True,
-                              ell_color=pt.RED, ell_linewidth=5.5)
+                pt.draw_kpts2(
+                    kpts_ri,
+                    rect=rect,
+                    ell=ell,
+                    ori=True,
+                    ell_color=pt.RED,
+                    ell_linewidth=5.5,
+                )
         if len(kpts_ripy) > 0:
-            pt.draw_kpts2(kpts_ripy, rect=rect, ell=ell,  ori=True,
-                          ell_color=pt.GREEN, ell_linewidth=3.5)
+            pt.draw_kpts2(
+                kpts_ripy,
+                rect=rect,
+                ell=ell,
+                ori=True,
+                ell_color=pt.GREEN,
+                ell_linewidth=3.5,
+            )
     pt.set_figtitle('green=python, red=C++')
     pt.show_if_requested()
 
 
 def vtool_adapt_rotation(img_fpath, kpts):
-    """ rotation invariance in python """
+    """rotation invariance in python"""
     import vtool.patch as ptool
     import vtool.image as gtool
+
     imgBGR = gtool.imread(img_fpath)
     kpts2 = ptool.find_kpts_direction(imgBGR, kpts)
     vecs2 = extract_vecs(img_fpath, kpts2)
@@ -752,6 +813,7 @@ def vtool_adapt_rotation(img_fpath, kpts):
 
 def adapt_scale(img_fpath, kpts):
     import vtool.ellipse as etool
+
     nScales = 16
     nSamples = 16
     low, high = -1, 2
@@ -771,4 +833,5 @@ if __name__ == '__main__':
         python -m pyhesaff._pyhesaff --allexamples --noface --nosrc
     """
     import xdoctest
+
     xdoctest.doctest_module(__file__)

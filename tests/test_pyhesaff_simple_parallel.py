@@ -29,10 +29,12 @@ def test_simple_parallel():
     #     >>> ut.show_if_requested()
     """
     import pytest
+
     pytest.skip('Broken in CI')
 
     import pyhesaff
     import utool as ut
+
     # import kwimage
     test_fnames = ['carl.jpg', 'lena.png', 'zebra.png', 'ada.jpg', 'star.png']
     img_fpaths = list(map(ut.grab_test_imgpath, test_fnames)) * 2
@@ -51,14 +53,18 @@ def test_simple_parallel():
             desc_list2.append(desc_)
 
     print('Checking for errors')
-    for (kpts_, desc_, kpts, desc) in zip(kpts_list2, desc_list2, kpts_array, desc_array):
-        print('shape(kpts, kpts_, desc, desc_) = %9r, %9r, %11r, %11r' %
-              (kpts.shape, kpts_.shape, desc.shape, desc_.shape))
+    for kpts_, desc_, kpts, desc in zip(
+        kpts_list2, desc_list2, kpts_array, desc_array
+    ):
+        print(
+            'shape(kpts, kpts_, desc, desc_) = %9r, %9r, %11r, %11r'
+            % (kpts.shape, kpts_.shape, desc.shape, desc_.shape)
+        )
         try:
             assert np.all(kpts_ == kpts), 'parallel computation inconsistent'
             assert np.all(desc_ == desc), 'parallel computation inconsistent'
             assert len(kpts_) > 0, 'no kpts detected'
-            #assert False, 'deliberate triggering to see printouts'
+            # assert False, 'deliberate triggering to see printouts'
         except Exception:
             raise
     print('Keypoints seem consistent')
@@ -71,4 +77,5 @@ if __name__ == '__main__':
         python ~/code/pyhesaff/tests/test_pyhesaff_simple_parallel.py
     """
     import xdoctest
+
     xdoctest.doctest_module(__file__)

@@ -3,6 +3,7 @@ import numpy as np
 
 def double_detect(img_fpath, **kw):
     import pyhesaff
+
     # Checks to make sure computation is determinsitc
     _kpts, _vecs = pyhesaff.detect_feats(img_fpath, **kw)
     kpts_, vecs_ = pyhesaff.detect_feats(img_fpath, **kw)
@@ -19,6 +20,7 @@ def test_ori_extract_main():
         python -m pyhesaff.tests.test_exhaustive_ori_extract --test-test_ori_extract_main --show
     """
     import pytest
+
     pytest.skip('Broken CI')
 
     import pyhesaff
@@ -27,27 +29,20 @@ def test_ori_extract_main():
     import vtool  # NOQA
     import vtool.image as gtool
     import vtool.keypoint as ktool
+
     np.set_printoptions(threshold=5000, linewidth=5000, precision=3)
     # Read data
     print('[rotinvar] loading test data')
 
     import utool as ut
+
     img_fpath = ut.grab_test_imgpath()
     imgL = gtool.cvt_BGR2L(gtool.imread(img_fpath))
-    detect_kw0 = {
-    }
-    detect_kw1 = {
-        'scale_min': 20,
-        'scale_max': 100
-    }
-    detect_kw2 = {
-        'scale_min': 40,
-        'scale_max': 60
-    }
-    detect_kw3 = {
-        'scale_min': 45,
-        'scale_max': 49
-    }
+    detect_kw0 = {}
+    detect_kw1 = {'scale_min': 20, 'scale_max': 100}
+    detect_kw2 = {'scale_min': 40, 'scale_max': 60}
+    detect_kw3 = {'scale_min': 45, 'scale_max': 49}
+
     # Remove skew and anisotropic scaling
     def force_isotropic(kpts):
         kpts_ = kpts.copy()
@@ -96,10 +91,19 @@ def test_ori_extract_main():
         print('kpts  = %r' % (kpts,))
         print('scales = %r' % ktool.get_scales(kpts))
         # FIXME: this exists in ibeis. move to vtool
-        #dev_consistency.check_vecs(vecs3)
+        # dev_consistency.check_vecs(vecs3)
 
-        show_keypoints(imgL, kpts, sifts=vecs, pnum=pnum, rect=True,
-                       ori=True, fnum=fnum, title=title, ell_alpha=1)
+        show_keypoints(
+            imgL,
+            kpts,
+            sifts=vecs,
+            pnum=pnum,
+            rect=True,
+            ori=True,
+            fnum=fnum,
+            title=title,
+            ell_alpha=1,
+        )
 
     show_kpts_(1, (nRow, nCol, 1), kpts3, vecs3, 'kpts3: original')
     show_kpts_(1, (nRow, nCol, 2), kpts4, vecs4, 'kpts4: isotropic + redetect')
@@ -109,10 +113,10 @@ def test_ori_extract_main():
     show_kpts_(2, (2, 3, 4), kpts8, vecs8, 'kpts8: shift + reorient')
     show_kpts_(2, (2, 3, 5), kpts9, vecs9, 'kpts9: reorient')
     show_kpts_(2, (2, 3, 6), kpts10, vecs10, 'kpts10: reorient')
-    #df2.iup()
+    # df2.iup()
 
-    #pinteract.interact_keypoints(imgBGR, kpts2, vecs, arrow=True, rect=True)
-    #exec(df2.present(wh=800))
+    # pinteract.interact_keypoints(imgBGR, kpts2, vecs, arrow=True, rect=True)
+    # exec(df2.present(wh=800))
 
 
 if __name__ == '__main__':
@@ -123,4 +127,5 @@ if __name__ == '__main__':
         python -m pyhesaff.tests.test_exhaustive_ori_extract --allexamples --noface --nosrc
     """
     import xdoctest
+
     xdoctest.doctest_module(__file__)

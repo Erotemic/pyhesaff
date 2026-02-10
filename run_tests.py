@@ -27,7 +27,7 @@ def temp_rename_kernprof(repo_dir):
 
 def replace_docker_path(path, runner_project_dir):
     """Update path to a file installed in a temp venv to runner_project_dir."""
-    pattern = re.compile(r"\/tmp\/.+?\/site-packages")
+    pattern = re.compile(r'\/tmp\/.+?\/site-packages')
     return pattern.sub(runner_project_dir, path)
 
 
@@ -46,7 +46,10 @@ def update_coverage_file(coverage_path, runner_project_dir):
         cursor.execute(read_file_query)
 
         old_records = cursor.fetchall()
-        new_records = [(replace_docker_path(path, runner_project_dir), _id) for _id, path in old_records]
+        new_records = [
+            (replace_docker_path(path, runner_project_dir), _id)
+            for _id, path in old_records
+        ]
         print('Updated coverage file paths:\n', new_records)
 
         sql_update_query = 'Update file set path = ? where id = ?'
@@ -113,12 +116,17 @@ if __name__ == '__main__':
         os.chdir(test_dir)
 
         pytest_args = [
-            '--cov-config', '../pyproject.toml',
-            '--cov-report', 'html',
-            '--cov-report', 'term',
-            '--cov-report', 'xml',
+            '--cov-config',
+            '../pyproject.toml',
+            '--cov-report',
+            'html',
+            '--cov-report',
+            'term',
+            '--cov-report',
+            'xml',
             '--cov=' + package_name,
-            modpath, '.'
+            modpath,
+            '.',
         ]
         if is_cibuildwheel():
             pytest_args.append('--cov-append')
@@ -129,5 +137,7 @@ if __name__ == '__main__':
         os.chdir(cwd)
         if is_cibuildwheel():
             # for CIBW under linux
-            copy_coverage_cibuildwheel_docker(f'/home/runner/work/{package_name}/{package_name}')
+            copy_coverage_cibuildwheel_docker(
+                f'/home/runner/work/{package_name}/{package_name}'
+            )
         print('Restoring cwd = {!r}'.format(cwd))

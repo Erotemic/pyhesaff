@@ -4,15 +4,17 @@ import numpy as np
 
 def do_test_hesaff_kpts(img_fpath, **kwargs):
     import pytest
+
     pytest.skip('Broken in CI')
     if 'kwargs' not in vars():
         kwargs = {}
     # Make detector and read image
     import pyhesaff
+
     hesaff_ptr = pyhesaff.new_hesaff(img_fpath, **kwargs)
     # Return the number of keypoints detected
     nKpts = pyhesaff.hesaff_lib.detect(hesaff_ptr)
-    #print('[pyhesaff] detected: %r keypoints' % nKpts)
+    # print('[pyhesaff] detected: %r keypoints' % nKpts)
     # Allocate arrays
     kpts = np.empty((nKpts, pyhesaff.KPTS_DIM), pyhesaff.kpts_dtype)
     desc = np.empty((nKpts, pyhesaff.DESC_DIM), pyhesaff.desc_dtype)
@@ -20,9 +22,9 @@ def do_test_hesaff_kpts(img_fpath, **kwargs):
     pyhesaff.hesaff_lib.exportArrays(hesaff_ptr, nKpts, kpts, desc)
     # TODO: Incorporate parameters
     # TODO: Scale Factor
-    #hesaff_lib.extractDesc(hesaff_ptr, nKpts, kpts, desc2)
-    #hesaff_lib.extractDesc(hesaff_ptr, nKpts, kpts, desc3)
-    #print('[hesafflib] returned')
+    # hesaff_lib.extractDesc(hesaff_ptr, nKpts, kpts, desc2)
+    # hesaff_lib.extractDesc(hesaff_ptr, nKpts, kpts, desc3)
+    # print('[hesafflib] returned')
     return kpts, desc
 
 
@@ -34,12 +36,14 @@ def test_adaptive_scale():
     exec(open('vtellipse.py').read())
     """
     import pytest
+
     pytest.skip('Broken in CI')
     print('test_adaptive_scale()')
     import vtool.ellipse as vtellipse
     from plottool import draw_func2 as df2
     from plottool.viz_keypoints import show_keypoints
     from pyhesaff.tests import pyhestest
+
     test_data = pyhestest.load_test_data(short=True, n=4)
     img_fpath = test_data['img_fpath']
     imgL = test_data['imgL']
@@ -47,7 +51,7 @@ def test_adaptive_scale():
     kpts = test_data['kpts']
     desc = test_data['desc']
     # WHY ARENT THESE 1s?
-    #np.sqrt(((desc / 256.0) ** 2).sum(1))
+    # np.sqrt(((desc / 256.0) ** 2).sum(1))
 
     nScales = 16
     nSamples = 16
@@ -57,8 +61,14 @@ def test_adaptive_scale():
     df2.figure(fnum=1, doclf=True, docla=True)
 
     def show_kpts(kpts_, px, title):
-        show_keypoints(imgBGR, kpts_, pnum=(2, 3, px + 3), fnum=1,
-                       color=df2.BLUE, title=title)
+        show_keypoints(
+            imgBGR,
+            kpts_,
+            pnum=(2, 3, px + 3),
+            fnum=1,
+            color=df2.BLUE,
+            title=title,
+        )
 
     def plot_line(vals, title):
         df2.figure(fnum=1, pnum=(2, 1, 1))
@@ -81,8 +91,12 @@ def test_adaptive_scale():
 
     # STEP2: UNIFORM SAMPLE / INTERPOLATE MAXIMA
     print('step2: uniform_sample / interpolate maxima()')
-    border_vals_sum = vtellipse.sample_ell_border_vals(imgBGR, expanded_kpts, nKp, nScales, nSamples)
-    x_data_list, y_data_list = vtellipse.find_maxima_with_neighbors(border_vals_sum)
+    border_vals_sum = vtellipse.sample_ell_border_vals(
+        imgBGR, expanded_kpts, nKp, nScales, nSamples
+    )
+    x_data_list, y_data_list = vtellipse.find_maxima_with_neighbors(
+        border_vals_sum
+    )
     peak_list = vtellipse.interpolate_peaks(x_data_list, y_data_list)
 
     plot_line(border_vals_sum[fx], 'gradient mag')
@@ -111,7 +125,7 @@ def test_adaptive_scale():
     print('step3: interpolate scales')
     subscale_list = vtellipse.interpolate_between(peak_list, nScales, high, low)
     subscale_kpts = vtellipse.expand_subscales(kpts, subscale_list)
-    #show_kpts(subscale_kpts, 3, 'subscale keypoint')
+    # show_kpts(subscale_kpts, 3, 'subscale keypoint')
 
     # STEP 4: Check Image Bounds
     print('step4: check image bounds')
@@ -121,19 +135,21 @@ def test_adaptive_scale():
     adapted_kpts = np.array(subscale_kpts[isvalid], dtype=np.float32)
     show_kpts(adapted_kpts, 3, 'adapted keypoint')
 
-    #df2.update()
+    # df2.update()
 
     scales = 2 ** np.linspace(low, high, nScales)
-    adapted_kpts = vtellipse.adaptive_scale(img_fpath, kpts, nScales, low, high, nSamples)
+    adapted_kpts = vtellipse.adaptive_scale(
+        img_fpath, kpts, nScales, low, high, nSamples
+    )
 
-    #plot_vals(adapted_kpts, pnum=(3
+    # plot_vals(adapted_kpts, pnum=(3
 
-    #viz.show_keypoints(imgBGR, adapted_kpts, pnum=(3, 1, 3), fnum=1, color=df2.BLUE, title='adapted keypoints')
+    # viz.show_keypoints(imgBGR, adapted_kpts, pnum=(3, 1, 3), fnum=1, color=df2.BLUE, title='adapted keypoints')
 
-    #adapted_desc = pyhesaff.extract_desc(img_fpath, adapted_kpts)
-    #desc = pyhesaff.extract_desc(img_fpath, kpts)
+    # adapted_desc = pyhesaff.extract_desc(img_fpath, adapted_kpts)
+    # desc = pyhesaff.extract_desc(img_fpath, kpts)
     ##interact.interact_keypoints(imgBGR, adapted_kpts, adapted_desc)
-    #df2.update()
+    # df2.update()
     return locals()
 
 
@@ -153,13 +169,15 @@ def test_adaptive_scale_main():
     #     >>> print(result)
     """
     import pytest
+
     pytest.skip('Broken in CI')
     print('__main__ = test_adaptive_scale.py')
     from plottool import draw_func2 as df2
     import ubelt as ub
+
     np.set_printoptions(threshold=5000, linewidth=5000, precision=3)
 
-    #adaptive_locals = test_adaptive_scale()
+    # adaptive_locals = test_adaptive_scale()
     # They seem to work
     # TODO: take the gui functions out of this test
     test_adaptive_scale()
@@ -176,4 +194,5 @@ if __name__ == '__main__':
         python -m pyhesaff.tests.test_adaptive_scale --allexamples --noface --nosrc
     """
     import xdoctest
+
     xdoctest.doctest_module(__file__)

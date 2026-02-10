@@ -351,8 +351,8 @@ def grab_test_image_fpath(key='astro'):
             return cand
         else:
             raise KeyError(
-                'Unknown key={!r}. Valid keys are {!r}'.format(
-                    key, valid_keys))
+                'Unknown key={!r}. Valid keys are {!r}'.format(key, valid_keys)
+            )
     if not isinstance(item, dict):
         item = {'url': item}
 
@@ -362,10 +362,12 @@ def grab_test_image_fpath(key='astro'):
     hasher_priority = ['sha256']
     for hasher in hasher_priority:
         if hasher in item:
-            grabkw.update({
-                'hash_prefix': item[hasher],
-                'hasher': hasher,
-            })
+            grabkw.update(
+                {
+                    'hash_prefix': item[hasher],
+                    'hasher': hasher,
+                }
+            )
             break
     if 'fname' in item:
         grabkw['fname'] = item['fname']
