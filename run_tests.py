@@ -4,6 +4,7 @@ Based on template in rc/run_tests.binpy.py.in
 """
 
 import os
+import pathlib
 import sqlite3
 import sys
 import re
@@ -12,6 +13,19 @@ import re
 def is_cibuildwheel():
     """Check if run with cibuildwheel."""
     return 'CIBUILDWHEEL' in os.environ
+
+
+def safe_resolve_path(path):
+    """
+    Resolve a path for comparison, but tolerate Windows junctions that are
+    known to raise PermissionError (e.g. C:\\Documents and Settings).
+    """
+    p = pathlib.Path(path)
+    try:
+        return p.resolve()
+    except (PermissionError, OSError) as ex:
+        print(f'[run_tests] Unable to resolve sys.path entry {p!r}: {ex!r}')
+        return p.absolute()
 
 
 # def temp_rename_kernprof(repo_dir):
@@ -82,8 +96,6 @@ def copy_coverage_cibuildwheel_docker(runner_project_dir):
 
 
 def main():
-    import pathlib
-
     orig_cwd = os.getcwd()
     repo_dir = pathlib.Path(__file__).parent.absolute()
     test_dir = repo_dir / 'tests'
@@ -114,7 +126,7 @@ def main():
     # Statically check if ``package_name`` is installed outside of the repo.
     # To do this, we make a copy of PYTHONPATH, remove the repodir, and use
     # ubelt to check to see if ``package_name`` can be resolved to a path.
-    temp_path = [pathlib.Path(p).resolve() for p in sys.path]
+    temp_path = [safe_resolve_path(p) for p in sys.path]
     _resolved_repo_dir = repo_dir.resolve()
     print(f'[run_tests] Searching for installed version of {package_name}.')
     try:
