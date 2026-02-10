@@ -180,6 +180,10 @@ def main():
             os.fspath(modpath),
             os.fspath(test_dir),
         ]
+        if os.name == 'nt':
+            # Legacy Windows junction that can trigger PermissionError during
+            # pytest collection on CI workers.
+            pytest_args.append('--ignore=C:\\Documents and Settings')
         if is_cibuildwheel():
             pytest_args.append('--cov-append')
 
