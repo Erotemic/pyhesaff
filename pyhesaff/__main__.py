@@ -9,6 +9,7 @@ def detect_feats_main():
     import ubelt as ub
 
     img_fpath = ub.argval('--fname', default=grab_test_imgpath())
+    assert isinstance(img_fpath, str)
     kwargs = argparse_hesaff_params()
     print('kwargs = %r' % (kwargs,))
 
