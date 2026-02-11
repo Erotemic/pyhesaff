@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from __future__ import annotations
+
 """
 The python hessian affine keypoint module
 
@@ -8,10 +10,16 @@ Command Line:
     python -m pyhesaff detect_feats --show --siftPower=0.5,
 """
 
+import os
 import numpy as np
 import ubelt as ub
 from collections import OrderedDict
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Sequence, Tuple
 from pyhesaff import _hesaff
+
+if TYPE_CHECKING:
+    ...
+    # from collections.abc import Iterable
 
 # ============================
 # hesaff ctypes interface
@@ -23,7 +31,7 @@ vecs_dtype = np.uint8
 img_dtype = np.uint8
 img32_dtype = np.float32
 # THE ORDER OF THIS LIST IS IMPORTANT!
-HESAFF_TYPED_PARAMS = [
+HESAFF_TYPED_PARAMS: List[Tuple[type, str, Any]] = [
     # Pyramid Params
     (int, 'numberOfScales', 3),  # number of scale per octave
     (
@@ -80,12 +88,12 @@ HESAFF_TYPED_PARAMS = [
     (float, 'siftPower', 1.0),
 ]
 
-HESAFF_PARAM_DICT = OrderedDict(
+HESAFF_PARAM_DICT: OrderedDict[str, Any] = OrderedDict(
     [(key, val) for (type_, key, val) in HESAFF_TYPED_PARAMS]
 )
 
 
-def grab_test_imgpath(p='astro'):
+def grab_test_imgpath(p: str = 'astro') -> str:
     from pyhesaff._demodata import grab_test_image_fpath
 
     fpath = grab_test_image_fpath(p)
@@ -97,13 +105,15 @@ def grab_test_imgpath(p='astro'):
     return fpath
 
 
-def imread(fpath):
+def imread(fpath: str | os.PathLike) -> np.ndarray | None:
     import cv2
 
-    return cv2.imread(fpath)
+    return cv2.imread(os.fspath(fpath))
 
 
-def _build_typed_params_kwargs_docstr_block(typed_params):
+def _build_typed_params_kwargs_docstr_block(
+    typed_params: Sequence[Tuple[type, str, Any]],
+) -> str:
     r"""
     Args:
         typed_params (dict):
@@ -118,7 +128,7 @@ def _build_typed_params_kwargs_docstr_block(typed_params):
         >>> result = build_typed_params_docstr(typed_params)
         >>> print(result)
     """
-    kwargs_lines = []
+    kwargs_lines: List[str] = []
     for tup in typed_params:
         type_, name, default = tup
         typestr = getattr(type_, '__name__', str(type_))
@@ -136,7 +146,7 @@ hesaff_kwargs_docstr_block = _build_typed_params_kwargs_docstr_block(
 )
 
 
-def argparse_hesaff_params():
+def argparse_hesaff_params() -> Dict[str, Any]:
     alias_dict = {'affine_invariance': 'ai'}
     alias_dict = {'rotation_invariance': 'ri'}
     default_dict_ = get_hesaff_default_params()
@@ -150,8 +160,8 @@ def argparse_hesaff_params():
     return hesskw
 
 
-KPTS_DIM = _hesaff.get_kpts_dim()
-DESC_DIM = _hesaff.get_desc_dim()
+KPTS_DIM: int = _hesaff.get_kpts_dim()
+DESC_DIM: int = _hesaff.get_desc_dim()
 
 
 # ============================
@@ -159,25 +169,25 @@ DESC_DIM = _hesaff.get_desc_dim()
 # ============================
 
 
-def alloc_patches(nKpts, size=41):
+def alloc_patches(nKpts: int, size: int = 41) -> np.ndarray:
     patches = np.empty((nKpts, size, size), np.float32)
     return patches
 
 
-def alloc_vecs(nKpts):
+def alloc_vecs(nKpts: int) -> np.ndarray:
     # array of bytes
     vecs = np.empty((nKpts, DESC_DIM), vecs_dtype)
     return vecs
 
 
-def alloc_kpts(nKpts):
+def alloc_kpts(nKpts: int) -> np.ndarray:
     # array of floats
     kpts = np.empty((nKpts, KPTS_DIM), kpts_dtype)
     # kpts = np.zeros((nKpts, KPTS_DIM), kpts_dtype) - 1.0  # array of floats
     return kpts
 
 
-def _make_hesaff_cpp_params(kwargs):
+def _make_hesaff_cpp_params(kwargs: Mapping[str, Any]) -> OrderedDict[str, Any]:
     hesaff_params = HESAFF_PARAM_DICT.copy()
     for key, val in kwargs.items():
         if key in hesaff_params:
@@ -192,15 +202,15 @@ def _make_hesaff_cpp_params(kwargs):
 # ============================
 
 
-def get_hesaff_default_params():
+def get_hesaff_default_params() -> OrderedDict[str, Any]:
     return HESAFF_PARAM_DICT.copy()
 
 
-def get_is_debug_mode():
+def get_is_debug_mode() -> bool:
     return _hesaff.is_debug_mode()
 
 
-def get_cpp_version():
+def get_cpp_version() -> int:
     r"""
     Returns:
         int: cpp_version
@@ -232,8 +242,11 @@ def get_cpp_version():
 
 
 def detect_feats(
-    img_fpath, use_adaptive_scale=False, nogravity_hack=False, **kwargs
-):
+    img_fpath: str | os.PathLike,
+    use_adaptive_scale: bool = False,
+    nogravity_hack: bool = False,
+    **kwargs: Any,
+) -> tuple:
     r"""
     driver function for detecting hessian affine keypoints from an image path.
     extra parameters can be passed to the hessian affine detector by using
@@ -343,7 +356,7 @@ def detect_feats(
         >>> #pt.show_if_requested()
     """
     # Load image
-    kpts, vecs = _hesaff.detect_fpath(img_fpath, **kwargs)
+    kpts, vecs = _hesaff.detect_fpath(os.fspath(img_fpath), **kwargs)
     if use_adaptive_scale:  # Adapt scale if requested
         kpts, vecs = adapt_scale(img_fpath, kpts)
     if nogravity_hack:
@@ -351,7 +364,7 @@ def detect_feats(
     return kpts, vecs
 
 
-def detect_feats2(img_or_fpath, **kwargs):
+def detect_feats2(img_or_fpath: str | os.PathLike | np.ndarray, **kwargs: Any):
     """
     General way of detecting from either an fpath or ndarray
 
@@ -361,7 +374,7 @@ def detect_feats2(img_or_fpath, **kwargs):
     Returns:
         tuple
     """
-    if isinstance(img_or_fpath, str):
+    if isinstance(img_or_fpath, (str, os.PathLike)):
         fpath = img_or_fpath
         return detect_feats(fpath, **kwargs)
     else:
@@ -369,7 +382,7 @@ def detect_feats2(img_or_fpath, **kwargs):
         return detect_feats_in_image(img, **kwargs)
 
 
-def detect_feats_list(image_paths_list, **kwargs):
+def detect_feats_list(image_paths_list: Sequence[str | os.PathLike], **kwargs: Any):
     """
     Args:
         image_paths_list (list): A list of image paths
@@ -420,7 +433,7 @@ def detect_feats_list(image_paths_list, **kwargs):
     return kpts_list, vecs_list
 
 
-def detect_feats_in_image(img, **kwargs):
+def detect_feats_in_image(img: np.ndarray, **kwargs: Any):
     r"""
     Takes a preloaded image and detects keypoints and descriptors
 
@@ -451,7 +464,7 @@ def detect_feats_in_image(img, **kwargs):
     return _hesaff.detect_image(img, **kwargs)
 
 
-def detect_num_feats_in_image(img, **kwargs):
+def detect_num_feats_in_image(img: np.ndarray, **kwargs: Any):
     r"""
     Just quickly returns how many keypoints are in the image. Does not attempt
     to return or store the values.
@@ -512,7 +525,7 @@ def detect_num_feats_in_image(img, **kwargs):
 # just extraction
 
 
-def extract_vecs(img_fpath, kpts, **kwargs):
+def extract_vecs(img_fpath: str | os.PathLike | np.ndarray, kpts: np.ndarray, **kwargs: Any):
     r"""
     Extract SIFT descriptors at keypoint locations
 
@@ -572,12 +585,12 @@ def extract_vecs(img_fpath, kpts, **kwargs):
         >>> pt.show_if_requested()
     """
     kpts = np.ascontiguousarray(kpts, dtype=kpts_dtype)
-    if isinstance(img_fpath, str):
-        return _hesaff.extract_desc_fpath(img_fpath, kpts, **kwargs)
+    if isinstance(img_fpath, (str, os.PathLike)):
+        return _hesaff.extract_desc_fpath(os.fspath(img_fpath), kpts, **kwargs)
     return _hesaff.extract_desc_image(img_fpath, kpts, **kwargs)
 
 
-def extract_patches(img_or_fpath, kpts, **kwargs):
+def extract_patches(img_or_fpath: str | os.PathLike | np.ndarray, kpts: np.ndarray, **kwargs: Any):
     r"""
     Extract patches used to compute SIFT descriptors.
 
@@ -616,12 +629,12 @@ def extract_patches(img_or_fpath, kpts, **kwargs):
         >>> pt.show_if_requested()
     """
     kpts = np.ascontiguousarray(kpts, dtype=kpts_dtype)
-    if isinstance(img_or_fpath, str):
-        return _hesaff.extract_patches_fpath(img_or_fpath, kpts, **kwargs)
+    if isinstance(img_or_fpath, (str, os.PathLike)):
+        return _hesaff.extract_patches_fpath(os.fspath(img_or_fpath), kpts, **kwargs)
     return _hesaff.extract_patches_image(img_or_fpath, kpts, **kwargs)
 
 
-def extract_desc_from_patches(patch_list):
+def extract_desc_from_patches(patch_list: np.ndarray):
     r"""
     Careful about the way the patches are extracted here.
 
@@ -717,7 +730,7 @@ def extract_desc_from_patches(patch_list):
 # ============================
 
 
-def test_rot_invar():
+def test_rot_invar() -> None:
     r"""
     CommandLine:
         python -m pyhesaff test_rot_invar --show
@@ -772,6 +785,7 @@ def test_rot_invar():
         # print(vt.kpts_repr(kpts_ripy))
         # Verify results plot
         pt.figure(fnum=fnum, pnum=next_pnum())
+        assert imgBGR is not None
         pt.imshow(imgBGR)
         # if len(kpts_gv) > 0:
         #    pt.draw_kpts2(kpts_gv, ori=True, ell_color=pt.BLUE, ell_linewidth=10.5)
@@ -800,24 +814,24 @@ def test_rot_invar():
     pt.show_if_requested()
 
 
-def vtool_adapt_rotation(img_fpath, kpts):
+def vtool_adapt_rotation(img_fpath: str | os.PathLike, kpts: np.ndarray):
     """rotation invariance in python"""
     import vtool.patch as ptool
     import vtool.image as gtool
 
-    imgBGR = gtool.imread(img_fpath)
+    imgBGR = gtool.imread(os.fspath(img_fpath))
     kpts2 = ptool.find_kpts_direction(imgBGR, kpts)
     vecs2 = extract_vecs(img_fpath, kpts2)
     return kpts2, vecs2
 
 
-def adapt_scale(img_fpath, kpts):
+def adapt_scale(img_fpath: str | os.PathLike, kpts: np.ndarray):
     import vtool.ellipse as etool
 
     nScales = 16
     nSamples = 16
     low, high = -1, 2
-    kpts2 = etool.adaptive_scale(img_fpath, kpts, nScales, low, high, nSamples)
+    kpts2 = etool.adaptive_scale(os.fspath(img_fpath), kpts, nScales, low, high, nSamples)
     # passing in 0 orientation results in gravity vector direction keypoint
     vecs2 = extract_vecs(img_fpath, kpts2)
     return kpts2, vecs2

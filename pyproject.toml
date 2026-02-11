@@ -182,3 +182,17 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
 docstring-code-format = false
+
+
+[tool.ty.src]
+exclude = [
+]
+
+[[tool.ty.overrides]]
+# Apply the ignore unresolved rules to these files
+include = [
+  "pyhesaff/_pyhesaff.py",
+  "pyhesaff/__main__.py",
+  "pyhesaff/_demodata.py",
+]
+rules = { unresolved-import = "ignore", possibly-missing-attribute = "ignore" }
